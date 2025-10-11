@@ -60,33 +60,39 @@ const Content: React.FC<ContentProps> = ({ themeLogoSrc }) => {
             {/* Introduction */}
             <motion.div ref={introRef} initial={{ opacity: 0, y: 50 }} animate={introInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}>
                 <Section>
-                    <p className="text-base md:text-lg text-gray-700 text-left leading-relaxed mb-4">
+                    <p className="text-base md:text-lg text-gray-700 text-center leading-relaxed mb-4">
                         Welcome to the official platform for celebrating <strong>Quality Month</strong> at <strong>Toyota Industries Engine India Pvt. Ltd.</strong> This is your space to explore, engage, and elevate your commitment to quality through exciting competitions and activities.
                     </p>
-                    <p className="text-base md:text-lg text-gray-600 leading-relaxed font-serif text-left">
-                        ಟೊಯೋಟಾ ಇಂಡಸ್ಟ್ರೀಸ್ ಎಂಜಿನ್ ಇಂಡಿಯಾ ಪ್ರೈ. ಲಿ. ನಲ್ಲಿ ಗುಣಮಟ್ಟ ತಿಂಗಳ ಆಚರಣೆಗೆ ಅಧಿಕೃತ ವೇದಿಕೆಗೆ ಸ್ವಾಗತ, ಇದು ನಿಮ್ಮ ಸ್ಥಳವಾಗಿದ್ದು, ಸ್ಪರ್ಧೆಗಳ ಮತ್ತು ಚಟುವಟಿಕೆಗಳ ಮೂಲಕ ಗುಣಮಟ್ಟದ ಪ್ರತಿಬದ್ಧತೆಯನ್ನು ಅನ್ವೇಷಿಸಲು, ತೊಡಗಿಸಿಕೊಳ್ಳಲು ಮತ್ತು ಉತ್ತೇಜಿಸಲು ಅವಕಾಶ ನೀಡುತ್ತದೆ.
+                    <p className="text-base md:text-lg text-gray-600 leading-relaxed font-serif text-center">
+                    ಟೊಯೋಟಾ ಇಂಡಸ್ಟ್ರೀಸ್ ಎಂಜಿನ್ ಇಂಡಿಯಾ ಪ್ರೈ. ಲಿಮಿಟೆಡ್‌ನಲ್ಲಿ<strong>ಗುಣಮಟ್ಟದ ತಿಂಗಳನ್ನು</strong>ಆಚರಿಸುವ ಅಧಿಕೃತ ವೇದಿಕೆಗೆ ನಿಮಗೆ ಸ್ವಾಗತ.
+                    ಉತ್ಸಾಹಭರಿತ ಸ್ಪರ್ಧೆಗಳು ಮತ್ತು ಚಟುವಟಿಕೆಗಳ ಮೂಲಕ ಗುಣಮಟ್ಟಕ್ಕೆ ನಿಮ್ಮ ಬದ್ಧತೆಯನ್ನು ಅನ್ವೇಷಿಸಲು, ತೊಡಗಿಸಿಕೊಳ್ಳಲು ಮತ್ತು ಉನ್ನತೀಕರಿಸಲು ಇದು ನಿಮ್ಮ ಜಾಗವಾಗಿದೆ.
                     </p>
                 </Section>
             </motion.div>
 
             {/* Theme */}
             <motion.div ref={themeRef} initial={{ opacity: 0, y: 50 }} animate={themeInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}>
-                <Section>
-                     <div className="relative flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 bg-blue-50 p-6 rounded-xl shadow-inner pt-8">
-                        <img src={companyLogo} alt="Company Logo" className="absolute top-1 left-1 w-32 h-32 m-0 object-contain" />
-                        <div className="text-center md:text-center order-2 md:order-1 mt-12">
-                            <p className="text-lg font-semibold text-blue-900">This Year's Theme:</p>
-                            <h3 className="text-2xl md:text-3xl font-bold text-blue-700">
-                                "Elevate Quality: Think differently with Waku Waku Spirit"
-                            </h3>
-                        </div>
-                         <img
-                            src={themeLogoSrc}
-                            alt="Theme Logo"
-                            className="w-32 h-32 sm:w-48 sm:h-48 md:w-56 md:h-56 object-contain transition-transform duration-300 hover:scale-110 hover:rotate-3 order-1 md:order-2"
-                        />
-                     </div>
-                </Section>
+            <Section>
+  <div className="flex flex-col gap-2 items-center justify-center  bg-blue-50 p-6 rounded-xl shadow-inner">
+    <img
+      src={companyLogo}
+      alt="Company Logo"
+      className="w-30 h-20 m-0 object-contain order-1"
+    />
+    <img
+      src={themeLogoSrc}
+      alt="Theme Logo"
+      className="w-36 h-36 sm:w-52 sm:h-52 md:w-60 md:h-60 object-contain transition-transform duration-300 hover:scale-110 hover:rotate-3 order-2"
+    />
+    <div className="text-center md:text-center order-3 mt-2">
+      <p className="text-lg font-semibold text-blue-900">This Year's Theme:</p>
+      <h3 className="text-2xl md:text-2xl font-bold text-blue-700">
+        "Elevate Quality: Think differently with Waku Waku Spirit"
+      </h3>
+    </div>
+  </div>
+</Section>
+
             </motion.div>
 
             {/* Encouragement */}
@@ -132,6 +138,9 @@ const Content: React.FC<ContentProps> = ({ themeLogoSrc }) => {
                     <p className="text-base md:text-lg text-gray-700 mb-6  mx-auto">
                         Click the button below to begin your journey in the Quality Month competitions. Let's make this celebration impactful and inspiring!
                     </p>
+                    <p className="text-base md:text-lg text-gray-700 mb-6  mx-auto">
+                    ಗುಣಮಟ್ಟದ ತಿಂಗಳ ಸ್ಪರ್ಧೆಗಳಲ್ಲಿ ನಿಮ್ಮ ಪ್ರಯಾಣವನ್ನು ಪ್ರಾರಂಭಿಸಲು ಕೆಳಗಿನ ಬಟನ್ ಅನ್ನು ಕ್ಲಿಕ್ ಮಾಡಿ. ಈ ಆಚರಣೆಯನ್ನು ಪ್ರಭಾವಶಾಲಿಯಾಗಿ ಮತ್ತು ಸ್ಫೂರ್ತಿದಾಯಕವಾಗಿ ಮಾಡೋಣ!
+                    </p>
                     <button onClick={() => setShowModal(true)} className="bg-red-600 text-white font-bold py-3 px-10 rounded-full text-xl shadow-lg hover:bg-red-700 transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-red-300">
                         Get Started
                     </button>
@@ -146,7 +155,7 @@ const Content: React.FC<ContentProps> = ({ themeLogoSrc }) => {
                         exit={{ opacity: 0, scale: 0.8 }}
                         className="bg-white p-6 rounded-lg max-w-md w-full mx-4"
                     >
-                        <h2 className="text-2xl font-bold text-blue-700 mb-4 text-center">Hurray!</h2>
+                        <h2 className="text-2xl font-bold text-red-700 mb-4 text-center">Announcement!</h2>
                         <p className="text-gray-700 mb-4 leading-relaxed text-justify">
                         We are <strong>launching the competitions on the 31st of October.</strong> Thank you for your enthusiasm and active participation in Quality Month. We look forward to seeing you again on the launch day!
                         </p>
