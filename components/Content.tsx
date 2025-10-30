@@ -1,7 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import companyLogo from '../assets/company-logo.png';
-import timeline from '../assets/timelines.jpg';
+// import companyLogo from '../assets/company-logo.png';
 
 // A reusable section component to keep styling consistent and add animation
 const Section: React.FC<{ title?: string; children: React.ReactNode; className?: string }> = ({ title, children, className = '' }) => (
@@ -37,10 +36,10 @@ const ListItem: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 interface ContentProps {
     themeLogoSrc: string;
+    onGetStarted: () => void;
 }
 
-const Content: React.FC<ContentProps> = ({ themeLogoSrc }) => {
-    const [showModal, setShowModal] = useState(false);
+const Content: React.FC<ContentProps> = ({ themeLogoSrc, onGetStarted }) => {
 
     const introRef = useRef(null);
     const introInView = useInView(introRef, { once: true });
@@ -58,6 +57,7 @@ const Content: React.FC<ContentProps> = ({ themeLogoSrc }) => {
     return (
     <div className="space-y-8">
             {/* Introduction */}
+            
             <motion.div ref={introRef} initial={{ opacity: 0, y: 50 }} animate={introInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}>
                 <Section>
                     <p className="text-base md:text-lg text-gray-700 text-center leading-relaxed mb-4">
@@ -75,7 +75,7 @@ const Content: React.FC<ContentProps> = ({ themeLogoSrc }) => {
             <Section>
   <div className="flex flex-col gap-2 items-center justify-center  bg-blue-50 p-6 rounded-xl shadow-inner">
     <img
-      src={companyLogo}
+      src="/company-logo.png"
       alt="Company Logo"
       className="w-30 h-20 m-0 object-contain order-1"
     />
@@ -141,39 +141,13 @@ const Content: React.FC<ContentProps> = ({ themeLogoSrc }) => {
                     <p className="text-base md:text-lg text-gray-700 mb-6  mx-auto">
                     ಗುಣಮಟ್ಟದ ತಿಂಗಳ ಸ್ಪರ್ಧೆಗಳಲ್ಲಿ ನಿಮ್ಮ ಪ್ರಯಾಣವನ್ನು ಪ್ರಾರಂಭಿಸಲು ಕೆಳಗಿನ ಬಟನ್ ಅನ್ನು ಕ್ಲಿಕ್ ಮಾಡಿ. ಈ ಆಚರಣೆಯನ್ನು ಪ್ರಭಾವಶಾಲಿಯಾಗಿ ಮತ್ತು ಸ್ಫೂರ್ತಿದಾಯಕವಾಗಿ ಮಾಡೋಣ!
                     </p>
-                    <button onClick={() => setShowModal(true)} className="bg-red-600 text-white font-bold py-3 px-10 rounded-full text-xl shadow-lg hover:bg-red-700 transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-red-300">
+                    <button onClick={onGetStarted} className="bg-red-600 text-white font-bold py-3 px-10 rounded-full text-xl shadow-lg hover:bg-red-700 transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-red-300">
                         Get Started
                     </button>
                 </Section>
             </motion.div>
 
-            {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <motion.div 
-                        initial={{ opacity: 0, scale: 0.8 }} 
-                        animate={{ opacity: 1, scale: 1 }} 
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        className="bg-white p-6 rounded-lg max-w-md w-full mx-4"
-                    >
-                        <h2 className="text-2xl font-bold text-red-700 mb-4 text-center">Announcement!</h2>
-                        <p className="text-gray-700 mb-4 leading-relaxed text-justify">
-                        We are <strong>launching the competitions on the 31st of October.</strong> Thank you for your enthusiasm and active participation in Quality Month. We look forward to seeing you again on the launch day!
-                        </p>
-                        <p className="text-gray-700 mb-4 text-left">
-                            Please refer to the <strong>overall activity timeline </strong>below for your reference.
-                        </p>
-                        <div className="bg-white rounded-lg p-4">
-                            <img src={timeline} alt="Activity Timeline" className="w-full rounded  mix-blend-darken" />
-                        </div>
-                        <button
-                            onClick={() => setShowModal(false)}
-                            className="bg-blue-600 text-white font-bold py-2 px-6 rounded-full hover:bg-blue-700 transition-colors block mx-auto"
-                        >
-                            Close
-                        </button>
-                    </motion.div>
-                </div>
-            )}
+
         </div>
     );
 };

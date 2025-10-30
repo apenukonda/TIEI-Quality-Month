@@ -1,5 +1,5 @@
 {
-  "name": "quality-month-celebration-2025",
+  "name": "copy-of-copy-of-copy-of-copy-of-copy-of-toyota-quality-month-event",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,11 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.2",
     "framer-motion": "^12.23.24",
+    "lucide-react": "^0.546.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "recharts": "^2.7.2"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.15",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
