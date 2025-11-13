@@ -3708,12 +3708,13 @@ const Admin: React.FC = () => {
                   </div>
 
                   <div className="overflow-x-auto">
-                    <div className="flex items-center justify-end mb-2">
+                      <div className="flex items-center justify-end mb-2">
                       <button
                         onClick={() => {
                           const rows = displayedMdRows.map((r) => ({
                             employee_id: r.employee_id,
                             name: r.name,
+                            department: r.department,
                             designation: r.designation,
                             score: r.score,
                           }));
@@ -3730,6 +3731,7 @@ const Admin: React.FC = () => {
                         <tr className="text-left text-sm font-medium text-gray-700">
                           <th className="px-4 py-3">Employee ID</th>
                           <th className="px-4 py-3">Name</th>
+                          <th className="px-4 py-3">Department</th>
                           <th className="px-4 py-3">Designation</th>
                           <th className="px-4 py-3">Score (task1)</th>
                         </tr>
@@ -3741,6 +3743,7 @@ const Admin: React.FC = () => {
                               {r.employee_id}
                             </td>
                             <td className="px-4 py-3 text-sm">{r.name}</td>
+                            <td className="px-4 py-3 text-sm">{r.department}</td>
                             <td className="px-4 py-3 text-sm">
                               {r.designation}
                             </td>
@@ -3752,7 +3755,7 @@ const Admin: React.FC = () => {
                         {displayedMdRows.length === 0 && (
                           <tr>
                             <td
-                              colSpan={4}
+                              colSpan={5}
                               className="px-4 py-8 text-center text-gray-500"
                             >
                               No MD Message completion data found for selected
