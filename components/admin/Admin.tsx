@@ -120,16 +120,33 @@ const Admin: React.FC = () => {
   // Profiles
   const fetchProfiles = async () => {
     try {
-      const { data, error } = await supabaseClient
-        .from("profiles")
-        .select("id, user_id, name, department, designation, score, role")
-        .eq("role", "user");
-      if (error) {
-        console.error("Error fetching profiles:", error.message || error);
-        return;
+      // Supabase select has an implicit cap (1000 rows). Use paginated fetch
+      // to ensure we retrieve all profiles in large deployments.
+      const pageSize = 1000;
+      let from = 0;
+      let allRows: any[] = [];
+      while (true) {
+        const to = from + pageSize - 1;
+        const { data, error } = await supabaseClient
+          .from("profiles")
+          .select("id, user_id, name, department, designation, score, role")
+          .eq("role", "user")
+          .range(from, to);
+        if (error) {
+          console.error("Error fetching profiles (paged):", error.message || error);
+          break;
+        }
+        const rows = (data || []) as any[];
+        allRows = allRows.concat(rows);
+        if (rows.length < pageSize) {
+          // last page
+          break;
+        }
+        from += pageSize;
       }
+
       // normalize to ProfileRow shape (role not stored on ProfileRow typically)
-      setProfiles(((data || []) as any[]).map((d) => ({
+      setProfiles((allRows || []).map((d) => ({
         id: d.id,
         user_id: d.user_id,
         name: d.name,
@@ -800,69 +817,6 @@ const Admin: React.FC = () => {
       setVideoRows([]);
     }
   };
-
-  // const fetchVideoCompletions = async () => {
-  //   try {
-  //     const { data, error } = await supabaseClient
-  //       .from('user_tasks')
-  //       .select('user_id, task_id, completed_steps')
-  //       .eq('task_id', 'task6');
-  //     if (error) {
-  //       console.error('Error fetching video completions:', error.message || error);
-  //       return;
-  //     }
-  //     const rows = data || [];
-  //     if (rows.length === 0) {
-  //       setVideoRows([]);
-  //       return;
-  //     }
-
-  //     const userIds = Array.from(new Set(rows.map((r: any) => r.user_id)));
-  //     const { data: profilesData, error: profilesError } = await supabaseClient
-  //       .from('profiles')
-  //       .select('id, user_id, name, department, designation')
-  //       .in('id', userIds as any[]);
-  //     if (profilesError) {
-  //       console.error('Error fetching profiles for video completions:', profilesError.message || profilesError);
-  //     }
-
-  //     const profileMap = new Map<string, any>();
-  //     (profilesData || []).forEach((p: any) => profileMap.set(p.id, p));
-
-  //     const joined = rows.map((r: any) => {
-  //       const profile = profileMap.get(r.user_id) || null;
-  //       const videosCompleted = Math.floor((r.completed_steps || 0) / 7);
-  //       const rowId = `${r.user_id}_${r.task_id}`;
-  //       return {
-  //         id: rowId,
-  //         user_id: r.user_id,
-  //         employee_id: r.employee_id,
-  //         name: r.name,
-  //         department: r.department || 'Unknown',
-  //         designation: r.designation || 'Unknown',
-  //         score_m1: typeof r.score_m1 === 'number' ? r.score_m1 : (r.score_m1 ? Number(r.score_m1) : 0),
-  //         score_m2: typeof r.score_m2 === 'number' ? r.score_m2 : (r.score_m2 ? Number(r.score_m2) : 0),
-  //         score_m3: typeof r.score_m3 === 'number' ? r.score_m3 : (r.score_m3 ? Number(r.score_m3) : 0),
-  //         total_score: typeof r.total_score === 'number' ? r.total_score : (r.total_score ? Number(r.total_score) : 0),
-  //         task_score: typeof r.task_score === 'number' ? r.task_score : (r.task_score ? Number(r.task_score) : 0),
-  //         m1Finished: !!r.m1,
-  //         m2Finished: !!r.m2,
-  //         m3Finished: !!r.m3,
-  //         completed_at: r.completed_at || null,
-  //       };
-  //     });
-
-  //     const withScore = joined.map(r => ({
-  //       ...r,
-  //       score: (videoTaskFilter === 'All') ? (r.total_score ?? 0) : (r.task_score ?? 0),
-  //     }));
-
-  //     setVideoRows(withScore);
-  //   } catch (e) {
-  //     console.error('Error in fetchVideoCompletions', e);
-  //     setVideoRows([]);
-  //   }
-  // };
 
   const fetchMDCompletions = async () => {
     // Try RPC-first (if function exists) then fallback to client-side join
