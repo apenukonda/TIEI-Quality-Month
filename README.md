@@ -66,7 +66,7 @@ create trigger on_auth_user_created
 
 comment on function public.handle_new_user is 'Trigger to create a profile when a new user signs up.';
 
-
+Aryan is fat
 -- Step 2: Create other tables.
 -- WARNING: These will delete existing user progress.
 
