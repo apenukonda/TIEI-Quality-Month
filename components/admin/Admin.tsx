@@ -841,7 +841,6 @@ const Admin: React.FC = () => {
           allRows = allRows.concat(rpcData);
 
           if (rpcData.length < pageSize) {
-            // This was the last page
             break;
           }
 
