@@ -819,103 +819,53 @@ const Admin: React.FC = () => {
   };
 
   const fetchMDCompletions = async () => {
-    // Try RPC-first (if function exists) then fallback to client-side join
     try {
-      try {
-        if (typeof (supabaseClient as any).rpc === 'function') {
-          const { data: rpcData, error: rpcErr } = await (supabaseClient as any).rpc('get_md_completions');
-          if (!rpcErr && Array.isArray(rpcData)) {
-            const mapped = (rpcData as any[]).map((r, idx) => ({
-              id: r.id ? String(r.id) : `${String(r.user_id)}_${String(r.task_id || '')}_${idx}`,
-              user_id: r.user_id,
-              employee_id: r.employee_id || r.user_id,
-              name: r.name || String(r.user_id),
-              department: r.department || 'Unknown',
-              designation: r.designation || 'Unknown',
-              score: typeof r.score === 'number' ? r.score : (r.score ? Number(r.score) : 0),
-              finished: typeof r.finished === 'boolean' ? r.finished : ((r.completed_steps || 0) >= 7),
-            }));
-            console.debug('fetchMDCompletions: loaded via RPC count=', mapped.length, 'sample=', mapped.slice(0,3));
-            setMdRows(mapped);
-            setMdRawTasks([]);
-            return;
+      const pageSize = 1000;
+      let offset = 0;
+      let allRows: any[] = [];
+
+      while (true) {
+        const { data: rpcData, error: rpcErr } = await (supabaseClient as any).rpc('get_md_completions', {
+          p_limit: pageSize,
+          p_offset: offset,
+        });
+
+        if (rpcErr) {
+          console.error('Error fetching MD completions:', rpcErr.message || rpcErr);
+          setMdRows([]);
+          setMdRawTasks([]);
+          return;
+        }
+
+        if (Array.isArray(rpcData)) {
+          allRows = allRows.concat(rpcData);
+
+          if (rpcData.length < pageSize) {
+            // This was the last page
+            break;
           }
-          if (rpcErr) console.debug('get_md_completions rpc error', rpcErr);
+
+          offset += pageSize;
+        } else {
+          // Should not happen if RPC returns array
+          break;
         }
-      } catch (e) {
-        console.debug('get_md_completions rpc call failed', e);
       }
 
-      // Client-side fallback: select user_tasks and join profiles by id or user_id
-      const { data, error } = await supabaseClient
-        .from('user_tasks')
-        .select('user_id, employee_id, task_id, completed_steps, score, updated_at')
-        .eq('task_id', 'task1');
-      if (error) {
-        console.error('Error fetching MD completions:', error.message || error);
-        setMdRows([]);
-        setMdRawTasks([]);
-        return;
-      }
+      const mapped = allRows.map((r, idx) => ({
+        id: r.id ? String(r.id) : `${String(r.user_id)}_${String(r.task_id || '')}_${idx}`,
+        user_id: r.user_id,
+        employee_id: r.employee_id || r.user_id,
+        name: r.name || String(r.user_id),
+        department: r.department || 'Unknown',
+        designation: r.designation || 'Unknown',
+        score: typeof r.score === 'number' ? r.score : (r.score ? Number(r.score) : 0),
+        finished: typeof r.finished === 'boolean' ? r.finished : ((r.completed_steps || 0) >= 7),
+      }));
+      console.debug('fetchMDCompletions: loaded via RPC count=', mapped.length, 'sample=', mapped.slice(0,3));
+      setMdRows(mapped);
+      setMdRawTasks([]);
 
-      const rows = data || [];
-      setMdRawTasks(rows as any[]);
-      console.debug('fetchMDCompletions: raw user_tasks rows count=', rows.length, 'sample=', rows.slice(0,3));
-      if (rows.length === 0) {
-        setMdRows([]);
-        return;
-      }
-
-      const userIds = Array.from(new Set(rows.map((r: any) => String(r.user_id))));
-      let profilesData: any[] = [];
-      try {
-        const { data: byId, error: errById } = await supabaseClient
-          .from('profiles')
-          .select('id, user_id, name, department, designation')
-          .in('id', userIds as string[]);
-        if (!errById && byId && byId.length) profilesData = byId;
-
-        const { data: byUserId, error: errByUser } = await supabaseClient
-          .from('profiles')
-          .select('id, user_id, name, department, designation')
-          .in('user_id', userIds as string[]);
-        if (!errByUser && byUserId && byUserId.length) {
-          const map = new Map<string, any>();
-          (profilesData || []).forEach((p: any) => map.set(String(p.id), p));
-          byUserId.forEach((p: any) => map.set(String(p.id), p));
-          profilesData = Array.from(map.values());
-        }
-      } catch (e) {
-        console.error('Unexpected error fetching profiles for MD completions', e);
-      }
-
-      const profileMap = new Map<string, any>();
-      (profilesData || []).forEach((p: any) => {
-        if (p?.id) profileMap.set(String(p.id), p);
-        if (p?.user_id) profileMap.set(String(p.user_id), p);
-      });
-
-      console.debug('fetchMDCompletions: profiles fetched count=', (profilesData || []).length || 0);
-
-      const joined = rows.map((r: any, idx: number) => {
-        const uid = String(r.user_id);
-        const profile = profileMap.get(uid) || null;
-        const finished = (r.completed_steps || 0) >= 7;
-        const employeeId = profile?.user_id || r.employee_id || r.user_id;
-        const displayName = profile?.name || r.employee_id || String(r.user_id);
-        return {
-          id: `${employeeId}_${String(r.task_id)}_${idx}`,
-          user_id: r.user_id,
-          employee_id: employeeId,
-          name: displayName,
-          designation: profile?.designation || 'Unknown',
-          department: profile?.department || 'Unknown',
-          score: typeof r.score === 'number' ? r.score : (r.score ? Number(r.score) : 0),
-          finished,
-        };
-      });
-      console.debug('fetchMDCompletions: joined rows count=', joined.length, 'sample=', joined.slice(0,3));
-      setMdRows(joined as any[]);
     } catch (e) {
       console.error('fetchMDCompletions outer error', e);
       setMdRows([]);
