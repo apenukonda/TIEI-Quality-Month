@@ -1499,6 +1499,8 @@ const Admin: React.FC = () => {
                           const rows = displayedSloganRows.map((r) => ({
                             employee_id: r.employee_id,
                             name: r.name,
+                            department: r.department || "Unknown",
+                            designation: r.designation || "Unknown",
                             slogan: r.slogan,
                           }));
                           exportToCSV(rows, "slogan_submissions.csv");
@@ -1514,6 +1516,8 @@ const Admin: React.FC = () => {
                         <tr className="text-left text-sm font-medium text-gray-700">
                           <th className="px-4 py-3">Employee ID</th>
                           <th className="px-4 py-3">Name</th>
+                          <th className="px-4 py-3">Department</th>
+                          <th className="px-4 py-3">Designation</th>
                           <th className="px-4 py-3">Slogan Submitted</th>
                         </tr>
                       </thead>
@@ -1524,13 +1528,15 @@ const Admin: React.FC = () => {
                               {r.employee_id}
                             </td>
                             <td className="px-4 py-3 text-sm">{r.name}</td>
+                            <td className="px-4 py-3 text-sm">{r.department}</td>
+                            <td className="px-4 py-3 text-sm">{r.designation}</td>
                             <td className="px-4 py-3 text-sm">{r.slogan}</td>
                           </tr>
                         ))}
                         {displayedSloganRows.length === 0 && (
                           <tr>
                             <td
-                              colSpan={3}
+                              colSpan={5}
                               className="px-4 py-8 text-center text-gray-500"
                             >
                               No slogan submissions found for selected filters.
