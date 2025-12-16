@@ -1682,6 +1682,8 @@ const Admin: React.FC = () => {
                           const rows = displayedImageRows.map((r) => ({
                             employee_id: r.employee_id,
                             name: r.name,
+                            department: r.department || "Unknown",
+                            designation: r.designation || "Unknown",
                           }));
                           exportToCSV(rows, "cartoon_submissions.csv");
                         }}
@@ -1696,6 +1698,8 @@ const Admin: React.FC = () => {
                         <tr className="text-left text-sm font-medium text-gray-700">
                           <th className="px-4 py-3">Employee ID</th>
                           <th className="px-4 py-3">Name</th>
+                          <th className="px-4 py-3">Department</th>
+                          <th className="px-4 py-3">Designation</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 bg-white">
@@ -1705,12 +1709,14 @@ const Admin: React.FC = () => {
                               {r.employee_id}
                             </td>
                             <td className="px-4 py-3 text-sm">{r.name}</td>
+                            <td className="px-4 py-3 text-sm">{r.department}</td>
+                            <td className="px-4 py-3 text-sm">{r.designation}</td>
                           </tr>
                         ))}
                         {displayedImageRows.length === 0 && (
                           <tr>
                             <td
-                              colSpan={2}
+                              colSpan={4}
                               className="px-4 py-8 text-center text-gray-500"
                             >
                               No cartoon submissions found for selected filters.
