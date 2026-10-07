@@ -11,8 +11,11 @@ if (!supabaseClient) {
   // Supabase is loaded from CDN in index.html
   // @ts-ignore
   const { createClient } = supabase;
-  const supabaseUrl = 'https://kescaddzecbnhnhpifha.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtlc2NhZGR6ZWNibmhuaHBpZmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4MzAxMjksImV4cCI6MjA3NTQwNjEyOX0.h69xRfbJSzq_7xd4bR40AmmXoa9zgcMUjxPeWBmkynM';
+  const envUrl = (import.meta as any).env?.VITE_SUPABASE_URL;
+  const envKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY;
+  const isReal = (val?: string) => Boolean(val && val.trim() !== '' && !val.includes('your-'));
+  const supabaseUrl = isReal(envUrl) ? envUrl.trim() : 'https://paysoqcytmymbkglhasy.supabase.co';
+  const supabaseKey = isReal(envKey) ? envKey.trim() : 'sb_publishable_pCD2TXYDQlTDny0OHkeWnA_zHhHelZx';
   supabaseClient = createClient(supabaseUrl, supabaseKey);
   try {
     // non-sensitive debug: print only the supabaseUrl so hosted vs local differences are obvious

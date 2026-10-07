@@ -263,8 +263,40 @@ const AuthPage: React.FC = () => {
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="flex items-center justify-center gap-3">
               <h2 className="text-3xl font-bold text-center text-gray-800">
-                Login
+                {role === "admin" ? "Admin Login" : "Login"}
               </h2>
+            </div>
+
+            {/* Role Switcher: Employee vs Admin */}
+            <div className="flex bg-gray-100 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setRole("user");
+                  setError("");
+                }}
+                className={`flex-1 py-1.5 text-sm font-semibold rounded-lg transition-all ${
+                  role === "user"
+                    ? "bg-white shadow text-gray-900"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+              >
+                Employee
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setRole("admin");
+                  setError("");
+                }}
+                className={`flex-1 py-1.5 text-sm font-semibold rounded-lg transition-all ${
+                  role === "admin"
+                    ? "bg-red-600 shadow text-white"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+              >
+                Admin
+              </button>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-600">

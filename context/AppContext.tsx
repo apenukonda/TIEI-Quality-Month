@@ -436,15 +436,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return { success: false, error: "Could not find user profile." };
     }
 
-    // Verify role from auth user metadata (Supabase returns user metadata in data.user.user_metadata)
-    // Default to 'user' if metadata missing
+    // Determine effective role from database profile or auth metadata
     // @ts-ignore
-    const userMetaRole = (data.user.user_metadata && data.user.user_metadata.role) || 'user';
-    if (userMetaRole !== role) {
-      return { success: false, error: 'Selected role does not match account role.' };
+    const effectiveRole = String(profile.role || (data.user.user_metadata && data.user.user_metadata.role) || 'user').toLowerCase();
+
+    if (role === 'admin' && effectiveRole !== 'admin') {
+      await logout();
+      return { success: false, error: 'This employee account does not have Administrator privileges.' };
     }
 
-    // Success, save session
+    // Success, save session with authoritative role
+    const userRole = (role === 'admin' || effectiveRole === 'admin') ? 'admin' : 'user';
     const user: User = {
       id: profile.id,
       userId: profile.user_id,
@@ -452,7 +454,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       department: profile.department,
       designation: profile.designation,
       score: profile.score,
-      role: profile.role || 'user',
+      role: userRole,
     };
     saveSession(user);
     setCurrentUser(user);
