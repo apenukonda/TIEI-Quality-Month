@@ -87,7 +87,7 @@ const Content: React.FC<ContentProps> = ({ themeLogoSrc, onGetStarted }) => {
     <div className="text-center md:text-center order-3 mt-2">
       <p className="text-lg font-semibold text-blue-900">This Year's Theme:</p>
       <h3 className="text-2xl md:text-2xl font-bold text-blue-700">
-        "Elevate Quality: Think differently with Waku Waku Spirit"
+        "Build Quality , Build Trust"
       </h3>
     </div>
   </div>
@@ -96,7 +96,7 @@ const Content: React.FC<ContentProps> = ({ themeLogoSrc, onGetStarted }) => {
             </motion.div>
 
             {/* Encouragement */}
-            <motion.div ref={encouragementRef} initial={{ opacity: 0, y: 50 }} animate={encouragementInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}>
+            {/* <motion.div ref={encouragementRef} initial={{ opacity: 0, y: 50 }} animate={encouragementInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}>
                 <Section>
                     <div className="text-lg text-gray-800  mx-auto text-left ">
                     <p className="text-xl"><strong className="text-black-700 text-left font-bold">This theme encourages us to:</strong></p>
@@ -105,7 +105,7 @@ const Content: React.FC<ContentProps> = ({ themeLogoSrc, onGetStarted }) => {
                         <p><strong className="text-green-600 text-left font-semibold">Be Preventive & Innovative</strong> – Drive continuous improvement with enthusiasm and energy.</p>
                     </div>
                 </Section>
-            </motion.div>
+            </motion.div> */}
 
             {/* Waku Waku Spirit */}
             <motion.div ref={wakuRef} initial={{ opacity: 0, y: 50 }} animate={wakuInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}>

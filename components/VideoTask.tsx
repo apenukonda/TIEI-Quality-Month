@@ -641,7 +641,7 @@ const VideoTask: React.FC = () => {
   const isM2Module = ADVANCED_MODULES[currentModuleIndex]?.id === 'M2';
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 pt-16 animate-fade-in">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 pt-16 pb-16 animate-fade-in">
       <button
         data-kn-skip
         onClick={handleBack}

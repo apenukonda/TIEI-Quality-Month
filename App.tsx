@@ -14,6 +14,7 @@ import KnowledgeCentrePage from './components/KnowledgeCentrePage';
 import KnFontScaler from './components/KnFontScaler';
 import Admin from './components/admin/Admin';
 import KaizenSuggestionTask from './components/KaizenSuggestionTask';
+import logoImg from './assets/logo.png';
 
 const App: React.FC = () => {
   const { currentPage, theme, currentUser } = useContext(AppContext);
@@ -23,6 +24,7 @@ const App: React.FC = () => {
   const isAdminUser = currentUser && (currentUser.role === 'admin' || currentUser.role === 'ADMIN');
   const pathnameIsAdmin = typeof window !== 'undefined' && window.location.pathname === '/admin';
   const isAdminView = Boolean(isAdminUser && (currentPage === Page.DASHBOARD || pathnameIsAdmin));
+  const showWatermark = currentPage !== Page.LOGIN && currentPage !== Page.SIGNUP;
 
   const renderPage = () => {
     const isAdmin = isAdminUser;
@@ -106,11 +108,23 @@ const App: React.FC = () => {
 
   return (
     <div className={`${theme} transition-colors duration-500`}>
-      <div className="bg-white text-gray-900 min-h-screen">
+      <div className="relative bg-white text-gray-900 min-h-screen">
+        {showWatermark && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden"
+          >
+            <img
+              src={logoImg}
+              alt=""
+              className="w-[min(82vw,760px)] max-h-[82vh] object-contain opacity-[0.055]"
+            />
+          </div>
+        )}
         {/* Global Kannada font-size scaler */}
         <KnFontScaler enabled={language === 'kn'} />
   {currentUser && !isAdminView && <Navbar />}
-        <main>{renderPage()}</main>
+        <main className="relative z-10">{renderPage()}</main>
       </div>
     </div>
   );
