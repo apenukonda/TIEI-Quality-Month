@@ -198,7 +198,3 @@ The "Image Submission" task requires a free Cloudinary account to store the uplo
 4.  **Update the Application Code**:
     *   Open the file `components/ImageSubmissionTask.tsx`.
     *   Replace the placeholder values for `CLOUD_NAME` and `UPLOAD_PRESET` with the values you just copied from your Cloudinary account.
-
-5.  **Just for testing purpose**:
-    *   Open the file `components/ImageSubmissionTask.tsx`.
-    *   Replace the placeholder values for `CLOUD_NAME` and `UPLOAD_PRESET` with the values you just copied from your Cloudinary account.
