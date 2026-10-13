@@ -14,7 +14,7 @@ const getRandomQuestions = (questions: typeof MD_MESSAGE_QUIZ, count: number) =>
 };
 
 const MdMessageTask: React.FC = () => {
-  const { setCurrentPage, updateTaskCompletion, tasks, addScore, t, language } = useContext(AppContext);
+  const { setCurrentPage, updateTaskCompletion, tasks, t, language } = useContext(AppContext);
   const [view, setView] = useState<'message' | 'instructions' | 'quiz' | 'completed'>('message');
   const [startedQuiz, setStartedQuiz] = useState(false);
   const [showBackWarning, setShowBackWarning] = useState(false);

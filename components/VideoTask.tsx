@@ -45,7 +45,6 @@ const VideoTask: React.FC = () => {
   updateModuleTask,
     getVideoProgress,
     updateVideoProgress,
-    addScore,
     t,
     language,
     selectedModuleIndex,

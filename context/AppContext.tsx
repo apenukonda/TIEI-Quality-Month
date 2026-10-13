@@ -11,6 +11,8 @@ interface AppContextType {
   currentPage: Page;
   setCurrentPage: (page: Page) => void;
   currentUser: User | null;
+  selectedModuleIndex: number | null;
+  setSelectedModuleIndex: (index: number | null) => void;
   language: 'en' | 'kn';
   setLanguage: (lang: 'en' | 'kn') => void;
   // language selection removed; translations are fixed to English
@@ -38,6 +40,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [theme, setThemeState] = useState<'light' | 'dark'>('dark');
   const [currentPage, setCurrentPage] = useState<Page>(Page.HOME);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [selectedModuleIndex, setSelectedModuleIndex] = useState<number | null>(null);
   const [language, setLanguageState] = useState<'en' | 'kn'>('en');
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
 
@@ -104,7 +107,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
     
     // FIX: Explicitly typing the Map avoids type inference issues, allowing safe property access.
-    const userProgress = new Map<string, { completed: number; score: number; }>(data.map(item => [item.task_id, { completed: item.completed_steps, score: item.score }]));
+    const userProgress = new Map<string, { completed: number; score: number; }>(data.map((item: { task_id: string; completed_steps: number; score: number }) => [item.task_id, { completed: item.completed_steps, score: item.score }]));
     const updatedTasks = INITIAL_TASKS.map(task => ({
         ...task,
         // FIX: The property 'completed' can now be safely accessed. Redundant Number() wrapper removed.
@@ -669,7 +672,10 @@ const { data, error } = await supabaseClient.auth.signUp({
       return;
     }
 
-    const totalScore = (allTasks || []).reduce((sum, t) => sum + (t.score || 0), 0);
+    const totalScore = (allTasks || []).reduce(
+      (sum: number, t: { score?: number | null }) => sum + (t.score || 0),
+      0
+    );
 
     // Also attempt to compute total from per-module progress tables (if present)
     let moduleProgressTotal = 0;
@@ -780,7 +786,7 @@ const { data, error } = await supabaseClient.auth.signUp({
         console.error("Error fetching video progress:", error.message);
         return {};
     }
-    return data.reduce((acc, item) => {
+    return data.reduce((acc: Record<string, { watchedSeconds: number; isComplete: boolean }>, item: { video_id: string; watched_seconds: number; is_complete: boolean }) => {
         acc[item.video_id] = { watchedSeconds: item.watched_seconds, isComplete: item.is_complete };
         return acc;
     }, {});
@@ -895,7 +901,7 @@ const { data, error } = await supabaseClient.auth.signUp({
   };
 
   return (
-    <AppContext.Provider value={{ theme, setTheme, currentPage, setCurrentPage, currentUser, language, setLanguage, t, login, signup, logout, tasks, updateTaskCompletion, updateModuleTask, resetTasks, getVideoProgress, updateVideoProgress, getSubmission, submitImageUrl, getTopScores, getTaskScore, fetchUserTasks, setTaskCompletedSteps }}>
+    <AppContext.Provider value={{ theme, setTheme, currentPage, setCurrentPage, currentUser, selectedModuleIndex, setSelectedModuleIndex, language, setLanguage, t, login, signup, logout, tasks, updateTaskCompletion, updateModuleTask, resetTasks, getVideoProgress, updateVideoProgress, getSubmission, submitImageUrl, getTopScores, getTaskScore, fetchUserTasks, setTaskCompletedSteps }}>
       {children}
     </AppContext.Provider>
   );

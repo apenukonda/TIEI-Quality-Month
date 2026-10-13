@@ -3,11 +3,12 @@ import React, { useState, useContext, useEffect, useRef } from 'react';
 import { AppContext } from '../context/AppContext';
 import { Page } from '../types';
 import Quiz from './Quiz';
-// FIX: Renamed imports to use constants that are actually exported from the constants file.
-import { ADVANCED_VIDEOS, ADVANCED_QUIZZES } from '../constants';
+import { ADVANCED_MODULES } from '../constants';
 import { ChevronLeftIcon, PlayIcon, CheckIcon, XCircleIcon } from './icons';
 
 type View = 'video_list' | 'video_player' | 'quiz' | 'completed';
+const ADVANCED_VIDEOS = ADVANCED_MODULES.flatMap(module => module.videos);
+const ADVANCED_QUIZZES = ADVANCED_MODULES.flatMap(module => module.quizzes);
 
 const EngineFunctionsTask: React.FC = () => {
   // FIX: Renamed 'updateTaskProgress' to 'updateTaskCompletion' to match the AppContext provider.
