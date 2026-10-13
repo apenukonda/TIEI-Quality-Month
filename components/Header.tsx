@@ -18,7 +18,7 @@ const Header: React.FC<HeaderProps> = ({ bannerSrc }) => {
                 animate={headerInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.8 }}
             >
-                Welcome to Quality Month Celebration – November 2025!
+                Welcome to Quality Month Celebration – November 2026!
             </motion.h1>
             <motion.div
                 className="w-full overflow-hidden rounded-lg shadow-lg"

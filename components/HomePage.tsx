@@ -25,7 +25,7 @@ const HomePage: React.FC = () => {
           <Content themeLogoSrc={themeLogoImg} onGetStarted={() => setCurrentPage(Page.LOGIN)} />
         </div>
         <footer className="text-center mt-8 text-gray-500 text-sm">
-          <p>&copy; 2025 Toyota Industries Engine India Pvt. Ltd. All Rights Reserved.</p>
+          <p>&copy; 2026 Toyota Industries Engine India Pvt. Ltd. All Rights Reserved.</p>
         </footer>
       </main>
     </div>
