@@ -4,8 +4,8 @@ import { AppContext } from '../context/AppContext';
 import { Page } from '../types';
 import Header from './Header';
 import Content from './Content';
-import bannerImg from '../assets/banner.jpg';
-import themeLogoImg from '../assets/theme logo.png';
+import bannerImg from '../assets/banner.jpeg';
+import themeLogoImg from '../assets/logo.png';
 
 const HomePage: React.FC = () => {
   const { setCurrentPage } = useContext(AppContext);
