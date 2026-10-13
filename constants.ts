@@ -361,161 +361,76 @@ export const INITIAL_TASKS: Task[] = [
 // (see TODO: Populate M1 placeholders - next).
 
 export const MD_MESSAGE_QUIZ: Question[] = [
-
-// Kannada version of MD_MESSAGE_QUIZ for translation
-
-  { 
-    text: 'Which month is celebrated as Quality Month?', 
-    options: ['October', 'November', 'December', 'January'], 
-    correctAnswer: 'November' 
-  }, 
-  { 
-    text: 'Who delivered the Quality Month message?', 
-    options: ['Top management', 'TICO group', 'Managing Director', 'Quality head'], 
-    correctAnswer: 'Managing Director' 
-  }, 
-  { 
-    text: 'Which of the following is the theme for Quality Month 2025?', 
-    options: ['Quality First, Safety Always', 'Zero Defects, Zero Complaints', 'Enhance Quality: Think Differently with Waku Waku Spirit', 'Customer Satisfaction is Key'], 
-    correctAnswer: 'Enhance Quality: Think Differently with Waku Waku Spirit' 
-  }, 
-  { 
-    text: 'Which principle is emphasized in the message?', 
-    options: ['Safety first', 'Productivity first', 'Customer second', 'Quality last'], 
-    correctAnswer: 'Safety first' 
-  }, 
-  { 
-    text: 'Which trend is mentioned as improving?', 
-    options: ['Production delays', 'Customer complaints', 'Employee turnover', 'Supplier issues'], 
-    correctAnswer: 'Customer complaints' 
-  }, 
-  { 
-    text: 'What does one defect mean to a customer?', 
-    options: ['Minor inconvenience', 'Partial dissatisfaction', '100% dissatisfaction', 'No impact'], 
-    correctAnswer: '100% dissatisfaction' 
-  }, 
-  { 
-    text: 'Which challenge is highlighted for this year?', 
-    options: ['Decrease in production', 'Frequent supplier shutdowns', 'Increase in production volume and frequent change points', 'Lack of customer feedback'], 
-    correctAnswer: 'Increase in production volume and frequent change points' 
-  }, 
-  { 
-    text: 'Which focus is recommended to meet challenges?', 
-    options: ['Cost reduction', 'Customer First and strong processes', 'Speed of delivery', 'Employee satisfaction'], 
-    correctAnswer: 'Customer First and strong processes' 
-  }, 
-  { 
-    text: 'Which practice helps achieve zero defects?', 
-    options: ['Hiring more staff', 'Strong standardized work', 'Reducing customer expectations', 'Increasing production speed'], 
-    correctAnswer: 'Strong standardized work' 
-  }, 
-  { 
-    text: 'Which of the following is part of 4M?', 
-    options: ['Measure', 'Money', 'Material', 'Metrics'], 
-    correctAnswer: 'Material' 
-  }, 
-  { 
-    text: 'Which factor should be enhanced to catch abnormalities?', 
-    options: ['Productivity', 'Detectability', 'Customer feedback', 'Supplier audits'], 
-    correctAnswer: 'Detectability' 
-  }, 
-  { 
-    text: 'Which item should never be allowed to outflow?', 
-    options: ['Raw materials', 'Abnormalities', 'Customer complaints', 'Production delays'], 
-    correctAnswer: 'Abnormalities' 
-  }, 
-  { 
-    text: 'Which quality approach is associated with passion and creativity?', 
-    options: ['Compliance', 'Waku Waku Spirit', 'Strict discipline', 'Customer complaints'], 
-    correctAnswer: 'Waku Waku Spirit' 
-  }, 
-  { 
-    text: 'Which goal is emphasized in the message?', 
-    options: ['Zero production', 'Zero outflow, zero complaints, complete customer trust', 'Maximum profit', 'Minimum cost'], 
-    correctAnswer: 'Zero outflow, zero complaints, complete customer trust' 
-  }, 
-  { 
-    text: 'Which ability should be strengthened to handle abnormalities?', 
-    options: ['Supplier contracts', 'Ability to see and act quickly', 'Customer surveys', 'Production speed'], 
-    correctAnswer: 'Ability to see and act quickly' 
-  }, 
-  { 
-    text: 'Which type of work ensures correct method every time?', 
-    options: ['Flexible work', 'Standardized work', 'Creative work', 'Remote work'], 
-    correctAnswer: 'Standardized work' 
-  }, 
-  { 
-    text: 'Which activity is encouraged during Quality Month?', 
-    options: ['Avoiding change', 'Active participation and learning', 'Reducing workload', 'Skipping meetings'], 
-    correctAnswer: 'Active participation and learning' 
-  }, 
-  { 
-    text: 'Which should be applied in daily work?', 
-    options: ['Customer complaints', 'Reflections from activities', 'Production delays', 'Supplier feedback'], 
-    correctAnswer: 'Reflections from activities' 
-  }, 
-  { 
-    text: 'Which journey is mentioned in the message?', 
-    options: ['Sales journey', 'Quality journey', 'Marketing journey', 'Supplier journey'], 
-    correctAnswer: 'Quality journey' 
-  }, 
-  { 
-    text: 'Which of the following is NOT a focus area for achieving zero defects?', 
-    options: ['Standardized work', 'Change point management', 'Enhanced detectability', 'Cost cutting'], 
-    correctAnswer: 'Cost cutting' 
-  }, 
-  { 
-    text: 'Which of the following is a key element in change point management?', 
-    options: ['4M changes', 'Customer surveys', 'Sales reports', 'Marketing plans'], 
-    correctAnswer: '4M changes' 
-  }, 
-  { 
-    text: 'Which of the following is encouraged during Quality Month?', 
-    options: ['Passive observation', 'Skipping activities', 'Active participation', 'Avoiding feedback'], 
-    correctAnswer: 'Active participation' 
-  }, 
-  { 
-    text: 'Which of the following is NOT mentioned as a challenge in 2025?', 
-    options: ['Increase in production volume', 'Frequent change points', 'Customer dissatisfaction', 'Employee training'], 
-    correctAnswer: 'Employee training' 
-  }, 
-  { 
-    text: 'Which of the following is a sign of strong process?', 
-    options: ['Zero outflow', 'High defect rate', 'Customer complaints', 'Frequent breakdowns'], 
-    correctAnswer: 'Zero outflow' 
-  }, 
-  { 
-    text: 'Which of the following is NOT part of the fundamental principle?-ಮೂಲಭೂತ ತತ್ವದ ಭಾಗವಲ್ಲದ್ದು (NOT part of the fundamental principle) ಯಾವುದು?', 
-    options: ['Safety first-Safety first', 'Quality second-Quality second', 'Productivity third-Productivity third', 'Profit first-ಲಾಭವೇ ಮೊದಲು (Profit first)'], 
-    correctAnswer: 'Profit first-ಲಾಭವೇ ಮೊದಲು (Profit first)' 
-  }, 
-  { 
-    text: 'Which of the following reflects the Waku Waku spirit?-ಕೆಳಗಿನವುಗಳಲ್ಲಿ ಯಾವುದು ವಕು ವಕು ಸ್ಪಿರಿಟ್ ಅನ್ನು ಉತ್ತಮವಾಗಿ ಪ್ರತಿಬಿಂಬಿಸುತ್ತದೆ?', 
-    options: ['Compliance only-ಕೇವಲ ಅನುಸರಣೆ', 'Routine work-ದಿನನಿತ್ಯದ ಕೆಲಸ', 'Thrill & Excitement-ರೋಮಾಂಚನ ಮತ್ತು ಉತ್ಸಾಹ (Thrill & Excitement)', 'Strict rules-ಕಟ್ಟುನಿಟ್ಟಾದ ನಿಯಮಗಳು'], 
-    correctAnswer: 'Thrill & Excitement-ರೋಮಾಂಚನ ಮತ್ತು ಉತ್ಸಾಹ (Thrill & Excitement)' 
-  }, 
-  { 
-    text: 'Which of the following is a desired outcome mentioned in the message?-ಕೆಳಗಿನವುಗಳಲ್ಲಿ ಯಾವುದು ಸಂದೇಶದಲ್ಲಿ ಉಲ್ಲೇಖಿಸಲಾದ ಅಪೇಕ್ಷಿತ ಫಲಿತಾಂಶವಾಗಿದೆ?', 
-    options: ['Zero complaints-ಶೂನ್ಯ ದೂರುಗಳು', 'Increased defects-ಹೆಚ್ಚಿದ ದೋಷಗಳು', 'Reduced safety-ಕಡಿಮೆ ಸುರಕ್ಷತೆ', 'Customer loss-ಗ್ರಾಹಕರ ನಷ್ಟ'], 
-    correctAnswer: 'Zero complaints-ಶೂನ್ಯ ದೂರುಗಳು' 
-  }, 
-  { 
-    text: 'Which of the following is NOT a recommended action during Quality Month?-ಗುಣಮಟ್ಟದ ತಿಂಗಳಲ್ಲಿ ಶಿಫಾರಸು ಮಾಡದ (NOT a recommended action) ಕ್ರಮ ಯಾವುದು?', 
-    options: ['Learning from reflections-ಪ್ರತಿಫಲನಗಳಿಂದ ಕಲಿಯುವುದು', 'Applying lessons daily-ದಿನನಿತ್ಯ ಪಾಠಗಳನ್ನು ಅನ್ವಯಿಸುವುದು', 'Ignoring feedback-ಪ್ರತಿಕ್ರಿಯೆಯನ್ನು ನಿರ್ಲಕ್ಷಿಸುವುದು (Ignoring feedback)', 'Participating in activities-ಚಟುವಟಿಕೆಗಳಲ್ಲಿ ಭಾಗವಹಿಸುವುದು'], 
-    correctAnswer: 'Ignoring feedback-ಪ್ರತಿಕ್ರಿಯೆಯನ್ನು ನಿರ್ಲಕ್ಷಿಸುವುದು (Ignoring feedback)' 
-  }, 
-  { 
-    text: 'Which of the following best supports building customer trust?', 
-    options: ['Zero outflow', 'High productivity', 'Fast delivery', 'Low cost'], 
-    correctAnswer: 'Zero outflow' 
-  }, 
-  { 
-    text: "What is the objective of 'Robust change point management' during 4M changes?-4M ಬದಲಾವಣೆಗಳ ಸಮಯದಲ್ಲಿ ಯಾವುದನ್ನು ಖಚಿತಪಡಿಸಿಕೊಳ್ಳುವುದು 'Robust change point management' ನ ಉದ್ದೇಶ?", 
-    options: ['To avoid profit loss-ಯಾವುದೇ ಲಾಭವಾಗದಂತೆ', 'To ensure no misses-ಯಾವುದೇ ಲೋಪವಾಗದಂತೆ (no misses)', 'To avoid production delays-ಯಾವುದೇ ವಿಳಂಬವಾಗದಂತೆ', 'To prevent customer complaints-ಯಾವುದೇ ದೂರುಗಳಾಗದಂತೆ'], 
-    correctAnswer: 'To ensure no misses-ಯಾವುದೇ ಲೋಪವಾಗದಂತೆ (no misses)' 
+  {
+    text: 'What is the theme of Quality Month 2026?',
+    options: ['Zero Defect Production', 'Customer First', 'Build Quality, Build Trust', 'Quality for Growth'],
+    correctAnswer: 'Build Quality, Build Trust'
+  },
+  {
+    text: "What is the organization's ultimate quality goal?",
+    options: ['Higher production', 'Lower costs', 'Zero quality concerns', 'Increased profits'],
+    correctAnswer: 'Zero quality concerns'
+  },
+  {
+    text: 'What is essential to meet global standards and expectations?',
+    options: ['Lower prices', 'Faster production', 'Consistent quality achievement', 'More employees'],
+    correctAnswer: 'Consistent quality achievement'
+  },
+  {
+    text: 'What should be done to achieve success in the new casting area?',
+    options: ['Conduct more inspections', 'Increase production volume', 'Build quality into the process from the beginning and develop capability', 'Outsource the process'],
+    correctAnswer: 'Build quality into the process from the beginning and develop capability'
+  },
+  {
+    text: 'How should project milestone DR requirements be followed?',
+    options: ['Only when necessary', 'Strictly', 'Only for selected projects', 'At the final stage only'],
+    correctAnswer: 'Strictly'
+  },
+  {
+    text: 'What transformation is emphasized in the Quality Month message?',
+    options: ['Production to Sales', 'Defect Detection to Defect Prevention', 'Manual to Automation', 'Local to Global'],
+    correctAnswer: 'Defect Detection to Defect Prevention'
+  },
+  {
+    text: 'What is the first key action highlighted?',
+    options: ['More inspections', 'Build quality into the process', 'Reduce costs', 'Increase production'],
+    correctAnswer: 'Build quality into the process'
+  },
+  {
+    text: 'Where should abnormalities be prevented?',
+    options: ['After reaching the customer', 'During final inspection', 'At the source', 'During annual audits'],
+    correctAnswer: 'At the source'
+  },
+  {
+    text: 'Why should change point management be strengthened?',
+    options: ['To increase production', 'To avoid any impact on quality and goguchi condition', 'To reduce costs', 'To increase workforce'],
+    correctAnswer: 'To avoid any impact on quality and goguchi condition'
+  },
+  {
+    text: 'When should abnormalities and risks be identified?',
+    options: ['After problems occur', 'After customer complaints', 'Early', 'At the end of the month'],
+    correctAnswer: 'Early'
+  },
+  {
+    text: 'What should be done when risks are identified?',
+    options: ['Ignore them', 'Report them later', 'Escalate them without delay', 'Leave them undocumented'],
+    correctAnswer: 'Escalate them without delay'
+  },
+  {
+    text: 'What is the purpose of confirming requirements at each milestone?',
+    options: ['To prevent risks from moving to the next stage', 'To reduce manpower', 'To improve sales', 'To shorten lead time'],
+    correctAnswer: 'To prevent risks from moving to the next stage'
+  },
+  {
+    text: 'What should the learning from Quality Month be converted into?',
+    options: ['New rules', 'Stronger processes and sustainable quality', 'New products', 'More documentation'],
+    correctAnswer: 'Stronger processes and sustainable quality'
+  },
+  {
+    text: 'What is the final message from the MD to all employees?',
+    options: ['Increase production', 'Reduce costs', 'Build Quality. Build Trust.', 'Start new projects'],
+    correctAnswer: 'Build Quality. Build Trust.'
   }
-  
-    
 ];
 
 
