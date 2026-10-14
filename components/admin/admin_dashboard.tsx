@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { AppContext } from "../../context/AppContext";
 import supabaseClient from "../../context/supabaseClient";
-import { Page } from "../../types";
+import { EXPECTED_REGISTRATION_COUNT, Page } from "../../types";
 import {
   BarChart,
   Bar,
@@ -723,7 +723,7 @@ const AdminDashboard: React.FC = () => {
                 <PieChart>
                   {(() => {
                     const registered = totalUsers-1;
-                    const target = 1559;
+                    const target = EXPECTED_REGISTRATION_COUNT;
                     const remaining = Math.max(target - registered, 0);
                     const data = [
                       { name: "Registered", value: registered },
@@ -766,7 +766,9 @@ const AdminDashboard: React.FC = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <span className="w-3 h-3 inline-block bg-[#fde68a] rounded-sm" />
-                <span className="text-gray-600">Remaining to 1559</span>
+                <span className="text-gray-600">
+                  Remaining to {EXPECTED_REGISTRATION_COUNT}
+                </span>
               </div>
             </div>
           </div>

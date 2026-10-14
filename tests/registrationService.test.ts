@@ -13,10 +13,12 @@ describe('registration API', () => {
         .rejects.toThrow('Employee details could not be verified');
     }
   });
-  it('loads department names from the database and rejects an empty roster', async () => {
-    const rpc = vi.fn().mockResolvedValueOnce({ data: ['TNGA - HEAD'], error: null }).mockResolvedValueOnce({ data: [], error: null });
+  it('filters department choices to the approved roster names and rejects an empty roster', async () => {
+    const rpc = vi.fn()
+      .mockResolvedValueOnce({ data: ['TNGA - HEAD', 'UNLISTED DEPARTMENT', 'ADMINISTRATION'], error: null })
+      .mockResolvedValueOnce({ data: ['UNLISTED DEPARTMENT'], error: null });
     const service = createRegistrationService({ rpc });
-    expect(await service.getDepartments()).toEqual(['TNGA - HEAD']);
+    expect(await service.getDepartments()).toEqual(['TNGA - HEAD', 'ADMINISTRATION']);
     await expect(service.getDepartments()).rejects.toThrow('Departments could not be loaded');
   });
 });
