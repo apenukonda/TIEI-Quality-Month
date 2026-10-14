@@ -524,7 +524,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (error) {
       // Normalize common 'already exists' messages into a friendlier message
       const em = (error.message || '').toLowerCase();
-      if (em.includes('please contact the admin')) {
+      if (em.includes('please contact the admin') || em.includes('please check your employee id and department') || em.includes('contact admin')) {
         return { success: false, error: EMPLOYEE_MISMATCH_MESSAGE };
       }
       if (error.code === 'unexpected_failure' || em.includes('database error saving new user')) {

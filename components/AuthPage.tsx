@@ -85,13 +85,10 @@ const AuthPage: React.FC = () => {
   }, [isLogin, getRegistrationDepartments, departmentLoadVersion]);
 
   const validateUserId = (id: string): string | null => {
-    // Employee ID should be digits only, length between 1 and 6
+    // Employee ID must be digits only and exactly 5 digits
     const sanitizedId = id.replace(/\D/g, "");
-    if (sanitizedId.length < 1 || sanitizedId.length > 6) {
-      return "Employee ID must be between 1 and 6 digits.";
-    }
-    if (!/^\d+$/.test(sanitizedId)) {
-      return "Employee ID must contain only numbers.";
+    if (sanitizedId.length !== 5) {
+      return "Employee ID must be exactly 5 digits.";
     }
     return null;
   };
@@ -101,10 +98,10 @@ const AuthPage: React.FC = () => {
     setLoading(true);
     setError("");
     setDepartmentError("");
-    // Validate userId length between 1 and 6 digits
+    // Validate userId must be exactly 5 digits
     const sanitizedUserId = userId.replace(/\D/g, "");
-    if (sanitizedUserId.length < 1 || sanitizedUserId.length > 6) {
-      setError("Employee ID must be between 1 and 6 digits.");
+    if (sanitizedUserId.length !== 5) {
+      setError("Employee ID must be exactly 5 digits.");
       setLoading(false);
       return;
     }
@@ -287,15 +284,15 @@ const AuthPage: React.FC = () => {
               <input
                 type="text"
                 inputMode="numeric"
-                pattern="[0-9]{1,6}"
-                maxLength={6}
-                placeholder="Enter 1-6 digits"
+                pattern="[0-9]{5}"
+                maxLength={5}
+                placeholder="Enter 5 digit id"
                 value={userId}
                 onChange={(e) => {
-                  // Allow only digits and limit to 6 characters for login
+                  // Allow only digits and limit to 5 characters for login
                   const sanitized = e.target.value
                     .replace(/\D/g, "")
-                    .slice(0, 6);
+                    .slice(0, 5);
                   setUserId(sanitized);
                   setError("");
                 }}
@@ -313,6 +310,7 @@ const AuthPage: React.FC = () => {
                   inputMode="numeric"
                   pattern="[0-9]*"
                   maxLength={4}
+                  placeholder="Enter 4-digit passcode"
                   value={passcode}
                   onChange={(e) => {
                     // Allow only digits and limit to 4 characters
@@ -419,16 +417,16 @@ const AuthPage: React.FC = () => {
               <input
                 type="text"
                 inputMode="numeric"
-                pattern="[0-9]{1,6}"
-                maxLength={6}
-                placeholder="Enter 1-6 digits"
+                pattern="[0-9]{5}"
+                maxLength={5}
+                placeholder="Please enter your 5 digit employee id"
                 value={newUserId}
                 aria-label="Employee ID"
                 onChange={(e) => {
-                  // Allow only digits and limit length to 6
+                  // Allow only digits and limit length to 5
                   const sanitized = e.target.value
                     .replace(/\D/g, "")
-                    .slice(0, 6);
+                    .slice(0, 5);
                   setNewUserId(sanitized);
                 }}
                 className={inputClass}
@@ -469,6 +467,7 @@ const AuthPage: React.FC = () => {
                   pattern="[0-9]*"
                   value={newPasscode}
                   aria-label="Passcode"
+                  placeholder="Enter 4-digit passcode"
                   maxLength={4}
                   onChange={(e) => {
                     const raw = e.target.value || "";
@@ -574,6 +573,7 @@ const AuthPage: React.FC = () => {
                   pattern="[0-9]*"
                   value={confirmPasscode}
                   aria-label="Confirm Passcode"
+                  placeholder="Re-enter your passcode"
                   maxLength={4}
                   onChange={(e) => {
                     const raw = e.target.value || "";

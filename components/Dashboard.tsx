@@ -31,8 +31,8 @@ const Dashboard: React.FC = () => {
       <header className="text-center mb-12">
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight">
           {language === "kn"
-            ? "2025 - ಗುಣಮಟ್ಟ ತಿಂಗಳ ಇವೆಂಟ್ ಪೋರ್ಟಲ್‌ಗೆ ಸ್ವಾಗತ"
-            : "Welcome to Quality Month - 2025 Event Portal"}
+            ? "2026 - ಗುಣಮಟ್ಟ ತಿಂಗಳ ಇವೆಂಟ್ ಪೋರ್ಟಲ್‌ಗೆ ಸ್ವಾಗತ"
+            : "Welcome to Quality Month - 2026 Event Portal"}
         </h1>
         <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
           {language === "kn"

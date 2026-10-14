@@ -10,7 +10,7 @@ Signup asks for Employee ID, Department, Passcode, and Confirm Passcode. Departm
 choices come from the database. Employee ID and Department must match the same
 roster row. Missing or mismatched records display exactly:
 
-> Please contact the admin
+> Please check your Employee ID and Department or contact admin
 
 The backend validates the pair again before Auth creates an account. It fills the
 profile's name, designation, and canonical department from the matched record.

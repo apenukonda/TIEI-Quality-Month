@@ -4,7 +4,7 @@ export interface SignupDetails {
   passcode: string;
 }
 
-export const EMPLOYEE_MISMATCH_MESSAGE = 'Please contact the admin';
+export const EMPLOYEE_MISMATCH_MESSAGE = 'Please check your Employee ID and Department or contact admin';
 
 export function createRegistrationService(client: any) {
   return {

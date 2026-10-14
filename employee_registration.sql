@@ -31,6 +31,40 @@ $$;
 revoke all on function public.get_registration_departments() from public, anon, authenticated;
 grant execute on function public.get_registration_departments() to anon, authenticated;
 
+-- Top registrations list for admin including manager name from employee_registry
+create or replace function public.get_admin_profiles(
+  p_limit integer default 2000,
+  p_offset integer default 0
+)
+returns table(
+  id uuid,
+  user_id text,
+  name text,
+  department text,
+  designation text,
+  manager_name text,
+  score int,
+  role text
+) language sql security definer as $$
+  select
+    p.id,
+    p.user_id,
+    p.name,
+    p.department,
+    p.designation,
+    coalesce(e.manager_employee_name, 'N/A') as manager_name,
+    p.score,
+    p.role
+  from public.profiles p
+  left join public.employee_registry e
+    on e.employee_number = p.user_id
+  where p.role = 'user'
+  order by p.score desc, p.created_at desc
+  limit p_limit offset p_offset;
+$$;
+revoke all on function public.get_admin_profiles(integer, integer) from public, anon, authenticated;
+grant execute on function public.get_admin_profiles(integer, integer) to anon, authenticated;
+
 -- Enforce the same-row match in Auth as well as the signup form. This trigger
 -- runs only for new accounts, preserving existing users and scores.
 create or replace function private.enforce_employee_registration()
@@ -46,7 +80,7 @@ begin
     and e.department_key = lower(btrim(regexp_replace(new.raw_user_meta_data->>'department', '[[:space:]]+', ' ', 'g')));
 
   if not found then
-    raise exception using errcode = '23514', message = 'Please contact the admin';
+    raise exception using errcode = '23514', message = 'Please check your Employee ID and Department or contact admin';
   end if;
 
   -- Populate identity from the verified roster, never user-supplied name,

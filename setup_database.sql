@@ -562,3 +562,4 @@ begin
   where p.role = 'user';
 end;
 $$;
+
