@@ -1,9 +1,14 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { Page, User, Task, Department, Designation } from '../types';
+import React, { createContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { Page, User, Task } from '../types';
 import { INITIAL_TASKS } from '../constants';
 
 import supabaseClient from './supabaseClient';
 import bcrypt from 'bcryptjs';
+import { createScoreService } from './scoreService';
+import { createRegistrationService, EMPLOYEE_MISMATCH_MESSAGE, SignupDetails } from './registrationService';
+
+const scoreService = createScoreService(supabaseClient);
+const registrationService = createRegistrationService(supabaseClient);
 
 interface AppContextType {
   theme: 'light' | 'dark';
@@ -18,13 +23,15 @@ interface AppContextType {
   // language selection removed; translations are fixed to English
   t: (key: string) => string;
   login: (userId: string, passcode: string, role: 'user' | 'admin') => Promise<{ success: boolean; error?: string }>;
-  signup: (details: { userId: string, name: string, department: Department, designation: Designation, passcode: string }) => Promise<{ success: boolean; error?: string }>;
+  signup: (details: SignupDetails) => Promise<{ success: boolean; error?: string }>;
+  getRegistrationDepartments: () => Promise<string[]>;
   logout: () => Promise<void>;
   tasks: Task[];
   updateTaskCompletion: (taskId: string, completedSteps: number, scoreEarned: number) => Promise<void>;
-  updateModuleTask?: (moduleName: string, taskIndex: number, completed: boolean, score: number) => Promise<number | null>;
+  updateModuleTask: (moduleName: string, taskIndex: number, completed: boolean, score: number) => Promise<number>;
   resetTasks: () => Promise<void>;
   getVideoProgress: (userId: string) => Promise<any>;
+  getModuleQuizProgress: (userId: string) => Promise<Record<string, boolean>>;
   updateVideoProgress: (videoId: string, watchedSeconds: number, isComplete: boolean) => Promise<void>;
   getSubmission: (taskId: string) => Promise<{ data: { image_url: string }[] | null, error: any }>;
   submitImageUrl: (taskId: string, imageUrl: string) => Promise<{ success: boolean; error?: any }>;
@@ -43,6 +50,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [selectedModuleIndex, setSelectedModuleIndex] = useState<number | null>(null);
   const [language, setLanguageState] = useState<'en' | 'kn'>('en');
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+
+  const currentUserRef = useRef(currentUser);
+  currentUserRef.current = currentUser;
+  const scoreWriteQueue = useRef<Promise<unknown>>(Promise.resolve());
 
   const SESSION_EXPIRY_DAYS = 7;
   const SESSION_KEY = 'toyota_quality_session';
@@ -102,8 +113,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     if (error) {
         console.error('Error fetching tasks:', error.message);
-        setTasks(INITIAL_TASKS);
-        return;
+        throw new Error('Saved progress could not be loaded. Please try again.');
     }
     
     // FIX: Explicitly typing the Map avoids type inference issues, allowing safe property access.
@@ -113,7 +123,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         // FIX: The property 'completed' can now be safely accessed. Redundant Number() wrapper removed.
         completedSteps: userProgress.get(task.id)?.completed || 0,
     }));
-    setTasks(updatedTasks);
+    if (currentUserRef.current?.id === userId) setTasks(updatedTasks);
   };
 
 
@@ -150,22 +160,39 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // ignore localStorage errors
     }
 
-    if (storedUser) {
-      setCurrentUser(storedUser);
-      fetchUserTasks(storedUser.id);
-      // If savedPage is one of the pre-login pages, prefer dashboard
-      if (savedPage === null || savedPage === Page.HOME || savedPage === Page.LOGIN || savedPage === Page.SIGNUP) {
-        setCurrentPage(Page.DASHBOARD);
-      } else {
-        setCurrentPage(savedPage);
+    let cancelled = false;
+    const restoreSession = async () => {
+      if (!storedUser) return;
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (cancelled) return;
+      if (error || data.session?.user.id !== storedUser.id) {
+        clearSession();
+        setCurrentPage(Page.HOME);
+        return;
       }
-    } else {
-      setCurrentUser(null);
-      setTasks(INITIAL_TASKS);
-      setCurrentPage(Page.HOME);
-    }
+      const { data: profile, error: profileError } = await supabaseClient
+        .from('profiles').select('score').eq('id', storedUser.id).single();
+      if (cancelled) return;
+      if (profileError || !profile) {
+        clearSession();
+        setCurrentPage(Page.LOGIN);
+        return;
+      }
+      const user = { ...storedUser, score: profile.score };
+      currentUserRef.current = user;
+      setCurrentUser(user);
+      setCurrentPage(savedPage === null || [Page.HOME, Page.LOGIN, Page.SIGNUP].includes(savedPage)
+        ? Page.DASHBOARD : savedPage);
+      await fetchUserTasks(user.id);
+    };
+    restoreSession().catch(error => console.error('Could not restore saved progress:', error));
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (currentUser) saveSession(currentUser);
+  }, [currentUser]);
 
   // Persist current page so refresh restores where user was
   useEffect(() => {
@@ -201,6 +228,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       dashboard: 'Dashboard',
       welcome: 'Welcome,',
       score: 'Score',
+      saving_score: 'Saving score...',
+      retry_save: 'Retry save',
+      retry_load: 'Reload progress',
       points: 'Points',
       points_label: 'Points',
       progress_label: 'Progress',
@@ -288,6 +318,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       dashboard: 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್',
       welcome: 'ಸ್ವಾಗತ,',
       score: 'ಸ್ಕೋರ್',
+      saving_score: 'ಅಂಕಗಳನ್ನು ಉಳಿಸಲಾಗುತ್ತಿದೆ...',
+      retry_save: 'ಮತ್ತೆ ಉಳಿಸಿ',
+      retry_load: 'ಪ್ರಗತಿಯನ್ನು ಮತ್ತೆ ಲೋಡ್ ಮಾಡಿ',
       points_label: 'ಅಂಕಗಳು',
       progress_label: 'ಪ್ರಗತಿ',
       start_task: 'ಟಾಸ್ ಅನ್ನು ಪ್ರಾರಂಭಿಸಿ',
@@ -460,56 +493,49 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       role: userRole,
     };
     saveSession(user);
+    currentUserRef.current = user;
     setCurrentUser(user);
     await fetchUserTasks(user.id);
     setCurrentPage(Page.DASHBOARD);
     return { success: true };
   };
   
-  const signup = async (details: { userId: string; name: string; department: Department, designation: Designation, passcode: string }): Promise<{ success: boolean; error?: string }> => {
-  //   const { userId, name, department, designation, passcode } = details;
-  //   const trimmedUserId = userId.trim();
-  // const email = `${trimmedUserId}@quality-event.internal`;
-  // // Transform user-facing passcode to a stronger password for Supabase
-  // const password = mapPasscodeToPassword(passcode);
-
-  //   // The trigger 'on_auth_user_created' will create the profile. Include role='user' in metadata.
-  // const { data, error } = await supabaseClient.auth.signUp({
-  //   email,
-  //   password,
-  //   options: {
-  //     // include passcode in user metadata so the DB trigger can populate profiles.passcode
-  //     // NOTE: storing plaintext passcode in metadata is insecure; only do this if expected by your backend.
-  //     data: { userId: trimmedUserId, name, department, designation, role: 'user', passcode }
-  //   }
-  // });
-  const { userId, name, department, designation, passcode } = details;
-const trimmedUserId = userId.trim();
-const email = `${trimmedUserId}@quality-event.internal`;
-const password = mapPasscodeToPassword(passcode);
-
-// 🔐 Hash the passcode before storing in metadata
-const salt = bcrypt.genSaltSync(10);
-const hashedPasscode = bcrypt.hashSync(passcode, salt);
-
-const { data, error } = await supabaseClient.auth.signUp({
-  email,
-  password,
-  options: {
-    data: { 
-      userId: trimmedUserId,
-      name,
-      department,
-      designation,
-      role: 'user',
-      passcode: hashedPasscode // store hash instead of plaintext
+  const signup = async (details: SignupDetails): Promise<{ success: boolean; error?: string }> => {
+    const { userId, department, passcode } = details;
+    const trimmedUserId = userId.trim();
+    try {
+      if (!await registrationService.matches(trimmedUserId, department)) {
+        return { success: false, error: EMPLOYEE_MISMATCH_MESSAGE };
+      }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Employee details could not be verified. Please try again.' };
     }
-  }
-});
+
+    const email = `${trimmedUserId}@quality-event.internal`;
+    const password = mapPasscodeToPassword(passcode);
+    const hashedPasscode = bcrypt.hashSync(passcode, bcrypt.genSaltSync(10));
+    // Auth validates the pair again and fills name/designation from the roster.
+    const { data, error } = await supabaseClient.auth.signUp({
+      email,
+      password,
+      options: { data: { userId: trimmedUserId, department: department.trim(), passcode: hashedPasscode } },
+    });
 
     if (error) {
       // Normalize common 'already exists' messages into a friendlier message
       const em = (error.message || '').toLowerCase();
+      if (em.includes('please contact the admin')) {
+        return { success: false, error: EMPLOYEE_MISMATCH_MESSAGE };
+      }
+      if (error.code === 'unexpected_failure' || em.includes('database error saving new user')) {
+        try {
+          if (!await registrationService.matches(trimmedUserId, department)) {
+            return { success: false, error: EMPLOYEE_MISMATCH_MESSAGE };
+          }
+        } catch {
+          return { success: false, error: 'Employee details could not be verified. Please try again.' };
+        }
+      }
       if (em.includes('already registered') || em.includes('already exists') || em.includes('user already')) {
         return { success: false, error: 'User already registered. Try logging in or use a different Employee ID.' };
       }
@@ -551,6 +577,7 @@ const { data, error } = await supabaseClient.auth.signUp({
       role: profile.role || 'user',
     };
     saveSession(user);
+    currentUserRef.current = user;
     setCurrentUser(user);
     await fetchUserTasks(user.id);
     setCurrentPage(Page.DASHBOARD);
@@ -559,6 +586,7 @@ const { data, error } = await supabaseClient.auth.signUp({
 
   const logout = async () => {
     clearSession();
+    currentUserRef.current = null;
     setCurrentUser(null);
     setTasks(INITIAL_TASKS);
     setCurrentPage(Page.HOME);
@@ -567,173 +595,29 @@ const { data, error } = await supabaseClient.auth.signUp({
 
 
 
-  const updateTaskCompletion = async (taskId: string, completedSteps: number, scoreEarned: number) => {
-    if (!currentUser) return;
-
-  console.log('Updating task completion:', { taskId, completedSteps, scoreEarned, prevScore: currentUser.score });
-    // Prefer server-side RPC which handles inserting/updating the user_tasks row
-    // and recalculates the user's total score in `profiles` atomically.
-    try {
-      const { data: rpcData, error: rpcError } = await supabaseClient.rpc('handle_task_completion', {
-        task_id_in: taskId,
-        user_id_in: currentUser.id,
-        completed_steps_in: completedSteps,
-        score_earned_in: scoreEarned,
-      });
-
-      console.debug('RPC handle_task_completion result:', { rpcData, rpcError });
-
-      if (!rpcError) {
-        // rpc can return scalar or an object depending on DB function; try to normalize
-        let newScore: number | null = null;
-        if (rpcData != null) {
-          if (typeof rpcData === 'number') {
-            newScore = rpcData as number;
-          } else if (Array.isArray(rpcData) && rpcData.length > 0 && typeof rpcData[0] === 'number') {
-            newScore = rpcData[0] as number;
-          } else if (rpcData && typeof rpcData === 'object' && 'score' in rpcData) {
-            // e.g. { score: 42 }
-            // @ts-ignore
-            newScore = Number(rpcData.score);
-          }
-        }
-
-        // Update local tasks completedSteps regardless
-        setTasks(prevTasks => prevTasks.map(task => task.id === taskId ? { ...task, completedSteps } : task));
-
-        if (newScore !== null) {
-          // If RPC returned a numeric authoritative total, use it
-          console.debug('updateTaskCompletion (RPC returned numeric). Prev score:', currentUser.score, 'New score:', newScore);
-          const updatedUser = { ...currentUser, score: newScore };
-          console.trace('updateTaskCompletion: setting currentUser (RPC numeric)');
-          setCurrentUser(updatedUser);
-          saveSession(updatedUser);
-          console.log('Score updated via RPC, new score:', newScore);
-          return;
-        }
-
-        // RPC did not return a value. Fetch the authoritative profile row
-        // so we don't accidentally add the passed `scoreEarned` onto an already
-        // updated client-side score (which causes doubling).
-        try {
-          const { data: profileRow, error: profileErr } = await supabaseClient
-            .from('profiles')
-            .select('*')
-            .eq('id', currentUser.id)
-            .single();
-          if (!profileErr && profileRow) {
-            console.debug('updateTaskCompletion: fetched profile after RPC with no return. Prev score:', currentUser.score, 'Profile score:', profileRow.score);
-            const updatedUser = { ...currentUser, ...profileRow };
-            console.trace('updateTaskCompletion: setting currentUser (refreshed from profiles)');
-            setCurrentUser(updatedUser);
-            saveSession(updatedUser);
-            console.log('Score refreshed from profiles after RPC (no return):', updatedUser.score);
-            return;
-          }
-        } catch (e) {
-          console.debug('Failed to fetch profile after RPC with no return value', e);
-        }
-        // If fetching the profile failed, fall through to the fallback path below
-      }
-      if (rpcError) console.warn('RPC handle_task_completion failed, falling back to client update:', rpcError.message || rpcError);
-    } catch (err) {
-      console.warn('RPC call threw, falling back to client update:', err);
-    }
-
-    // Fallback: update user_tasks and profiles from the client if RPC isn't available.
-    // Include the per-task `score` in the upsert so DB-side logic (if any) can depend on it.
-    // Fallback: set the per-task score to the provided `scoreEarned` (this matches the RPC behavior
-    // where the caller passes the intended per-task total score).
-    console.debug('Fallback upsert will set score to passed value (scoreEarned):', { taskId, userId: currentUser.id, scoreEarned, completedSteps });
-
-    const { error: taskError } = await supabaseClient
-      .from('user_tasks')
-      .upsert(
-        { user_id: currentUser.id, task_id: taskId, completed_steps: completedSteps, score: scoreEarned },
-        { onConflict: 'user_id,task_id' }
-      );
-
-    if (taskError) {
-      console.error('Error updating task (upsert):', taskError.message || taskError);
-      // continue to attempt to recalc total from whatever is available
-    } else {
-      console.debug('Upsert successful for user_tasks', { userId: currentUser.id, taskId, scoreEarned, completedSteps });
-    }
-
-    // Fetch all user_tasks for this user and sum their scores
-    const { data: allTasks, error: allTasksError } = await supabaseClient
-      .from('user_tasks')
-      .select('score')
-      .eq('user_id', currentUser.id);
-
-    console.debug('Fetched all user_tasks for score sum', { allTasks, allTasksError });
-    if (allTasksError) {
-      console.error('Error fetching user_tasks for score sum:', allTasksError.message);
-      return;
-    }
-
-    const totalScore = (allTasks || []).reduce(
-      (sum: number, t: { score?: number | null }) => sum + (t.score || 0),
-      0
-    );
-
-    // Also attempt to compute total from per-module progress tables (if present)
-    let moduleProgressTotal = 0;
-    try {
-      const tables = ['module_m1_progress', 'module_m2_progress', 'module_m3_progress'];
-      for (const tbl of tables) {
-        const { data: mpData, error: mpError } = await supabaseClient.from(tbl).select('score').eq('user_id', currentUser.id);
-        if (!mpError && mpData) {
-          moduleProgressTotal += (mpData as any[]).reduce((s, r) => s + (r.score || 0), 0);
-        }
-      }
-    } catch (e) {
-      // ignore module progress read errors
-    }
-
-    // Use the maximum of the two totals as the authoritative total to avoid accidental decreases
-    const authoritativeTotal = Math.max(totalScore, moduleProgressTotal || 0);
-
-    // Update total score in profiles
-    const { error: scoreError } = await supabaseClient
-      .from('profiles')
-      .update({ score: authoritativeTotal })
-      .eq('id', currentUser.id);
-
-    if (scoreError) {
-      console.error('Error updating score:', scoreError.message);
-      return;
-    }
-
-    console.log('Score updated successfully in DB (fallback)');
-
-    // Fetch latest user profile to ensure UI reactivity
-    const { data: userProfile, error: userProfileError } = await supabaseClient
-      .from('profiles')
-      .select('*')
-      .eq('id', currentUser.id)
-      .single();
-
-    console.debug('Fetched userProfile after score update', { userProfile, userProfileError });
-
-    setTasks(prevTasks =>
-      prevTasks.map(task =>
-        task.id === taskId ? { ...task, completedSteps } : task
-      )
-    );
-    if (!userProfileError && userProfile) {
-      const updatedUser = { ...currentUser, ...userProfile };
-      setCurrentUser(updatedUser);
-      saveSession(updatedUser);
-      console.log('Local state updated, new user score (from DB):', updatedUser.score);
-    } else {
-      // fallback to local update if fetch fails
-      const updatedUser = { ...currentUser, score: totalScore };
-      setCurrentUser(updatedUser);
-      saveSession(updatedUser);
-      console.log('Local state updated, new user score (local fallback):', updatedUser.score);
-    }
+  const queueScoreWrite = (operation: (userId: string) => Promise<void>) => {
+    const userId = currentUserRef.current?.id;
+    if (!userId) return Promise.reject(new Error('Please log in before saving your score.'));
+    const next = scoreWriteQueue.current.catch(() => {}).then(async () => {
+      if (currentUserRef.current?.id !== userId) throw new Error('Your session changed. Please log in again.');
+      await operation(userId);
+    });
+    scoreWriteQueue.current = next;
+    return next;
   };
+
+  const applyScore = (userId: string, score: number) => {
+    setCurrentUser(previous => previous?.id === userId ? { ...previous, score } : previous);
+  };
+
+  const updateTaskCompletion = (taskId: string, completedSteps: number, scoreEarned: number) =>
+    queueScoreWrite(async userId => {
+      const score = await scoreService.updateTask(userId, taskId, completedSteps, scoreEarned);
+      if (currentUserRef.current?.id !== userId) return;
+      applyScore(userId, score);
+      setTasks(previous => previous.map(task => task.id === taskId
+        ? { ...task, completedSteps: Math.max(task.completedSteps, completedSteps) } : task));
+    });
 
   const getTopScores = async (department?: string): Promise<{ name: string; department: string; score: number }[]> => {
     let query = supabaseClient
@@ -784,7 +668,7 @@ const { data, error } = await supabaseClient.auth.signUp({
     
     if (error) {
         console.error("Error fetching video progress:", error.message);
-        return {};
+        throw new Error('Saved video progress could not be loaded. Please try again.');
     }
     return data.reduce((acc: Record<string, { watchedSeconds: number; isComplete: boolean }>, item: { video_id: string; watched_seconds: number; is_complete: boolean }) => {
         acc[item.video_id] = { watchedSeconds: item.watched_seconds, isComplete: item.is_complete };
@@ -793,7 +677,7 @@ const { data, error } = await supabaseClient.auth.signUp({
   };
 
   const updateVideoProgress = async (videoId: string, watchedSeconds: number, isComplete: boolean) => {
-      if (!currentUser) return;
+      if (!currentUser) throw new Error('Please log in before saving progress.');
       const { error } = await supabaseClient
           .from('user_video_progress')
           .upsert(
@@ -802,6 +686,7 @@ const { data, error } = await supabaseClient.auth.signUp({
           );
       if (error) {
           console.error("Error updating video progress:", error.message);
+          throw new Error('Your video progress could not be saved. Please try again.');
       }
   };
   
@@ -854,46 +739,16 @@ const { data, error } = await supabaseClient.auth.signUp({
      }
   };
 
-  const updateModuleTask = async (moduleName: string, taskIndex: number, completed: boolean, score: number): Promise<number | null> => {
-    if (!currentUser) {
-      console.debug('updateModuleTask: no currentUser, skipping RPC', { moduleName, taskIndex, completed, score });
-      return null;
-    }
-    try {
-      console.debug('updateModuleTask: calling RPC', { moduleName, taskIndex, completed, score, userId: currentUser.id });
-      const { data, error } = await supabaseClient.rpc('update_module_task', { module_name: moduleName, user_id_in: currentUser.id, task_index: taskIndex, completed: completed, score: score });
-      console.debug('update_module_task rpc response', { data, error });
-      if (error) {
-        console.error('update_module_task RPC error:', error.message || error);
-        return null;
-      }
-      // After successful RPC, fetch the authoritative profile row so the UI shows updated score
-      try {
-        const { data: profileData, error: profileError } = await supabaseClient
-          .from('profiles')
-          .select('*')
-          .eq('id', currentUser.id)
-          .single();
-        if (!profileError && profileData) {
-          const updatedUser = { ...currentUser, ...profileData };
-          setCurrentUser(updatedUser);
-          saveSession(updatedUser);
-          console.debug('updateModuleTask: refreshed currentUser from profiles', { score: updatedUser.score });
-        } else if (profileError) {
-          console.debug('updateModuleTask: could not refresh profile after RPC', profileError.message || profileError);
-        }
-      } catch (err) {
-        console.debug('updateModuleTask: error fetching profile after RPC', err);
-      }
-      // RPC returns new total; normalize numeric return
-      if (typeof data === 'number') return data as number;
-      if (Array.isArray(data) && typeof data[0] === 'number') return data[0] as number;
-      if (data && typeof data === 'object' && 'new_total' in data) return Number((data as any).new_total);
-      return null;
-    } catch (err) {
-      console.error('update_module_task exception:', err);
-      return null;
-    }
+  const updateModuleTask = async (moduleName: string, taskIndex: number, completed: boolean, score: number): Promise<number> => {
+    let total = 0;
+    await queueScoreWrite(async userId => {
+      total = await scoreService.updateModule(userId, moduleName, taskIndex, completed, score);
+      if (currentUserRef.current?.id !== userId) return;
+      applyScore(userId, total);
+      // The RPC also saves the task6 aggregate in the same transaction.
+      await fetchUserTasks(userId);
+    });
+    return total;
   };
 
   const setTaskCompletedSteps = (taskId: string, completedSteps: number) => {
@@ -901,7 +756,7 @@ const { data, error } = await supabaseClient.auth.signUp({
   };
 
   return (
-    <AppContext.Provider value={{ theme, setTheme, currentPage, setCurrentPage, currentUser, selectedModuleIndex, setSelectedModuleIndex, language, setLanguage, t, login, signup, logout, tasks, updateTaskCompletion, updateModuleTask, resetTasks, getVideoProgress, updateVideoProgress, getSubmission, submitImageUrl, getTopScores, getTaskScore, fetchUserTasks, setTaskCompletedSteps }}>
+    <AppContext.Provider value={{ theme, setTheme, currentPage, setCurrentPage, currentUser, selectedModuleIndex, setSelectedModuleIndex, language, setLanguage, t, login, signup, getRegistrationDepartments: registrationService.getDepartments, logout, tasks, updateTaskCompletion, updateModuleTask, resetTasks, getVideoProgress, getModuleQuizProgress: scoreService.getModuleProgress, updateVideoProgress, getSubmission, submitImageUrl, getTopScores, getTaskScore, fetchUserTasks, setTaskCompletedSteps }}>
       {children}
     </AppContext.Provider>
   );

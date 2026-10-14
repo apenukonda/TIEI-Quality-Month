@@ -1,27 +1,25 @@
 
 import React, { useState, useContext, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
-import { Page, Question } from '../types';
+import { Page } from '../types';
 import Quiz from './Quiz';
 import { MD_MESSAGE_QUIZ } from '../constants';
 import { MD_MESSAGE_QUIZ_KN } from '../constants_kn';
 import { ChevronLeftIcon, CheckIcon, XCircleIcon } from './icons';
-
-// Function to get 7 random questions from MD_MESSAGE_QUIZ
-const getRandomQuestions = (questions: typeof MD_MESSAGE_QUIZ, count: number) => {
-  const shuffled = [...questions].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, count);
-};
 
 const MdMessageTask: React.FC = () => {
   const { setCurrentPage, updateTaskCompletion, tasks, t, language } = useContext(AppContext);
   const [view, setView] = useState<'message' | 'instructions' | 'quiz' | 'completed'>('message');
   const [startedQuiz, setStartedQuiz] = useState(false);
   const [showBackWarning, setShowBackWarning] = useState(false);
-  const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
+  const [quizQuestionIndices, setQuizQuestionIndices] = useState<number[]>([]);
+  const quizQuestions = quizQuestionIndices.map(index =>
+    (language === 'kn' ? MD_MESSAGE_QUIZ_KN : MD_MESSAGE_QUIZ)[index]);
   const [currentQuizScore, setCurrentQuizScore] = useState(0);
   const [showResultModal, setShowResultModal] = useState(false);
   const [resultScore, setResultScore] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
     const task = tasks.find(t => t.id === 'task1');
@@ -33,14 +31,16 @@ const MdMessageTask: React.FC = () => {
   useEffect(() => {
     if (view === 'quiz') {
       setStartedQuiz(true);
-      // Always refresh questions when language or view changes
-      setQuizQuestions(getRandomQuestions(language === 'kn' ? MD_MESSAGE_QUIZ_KN : MD_MESSAGE_QUIZ, 7));
+      // Keep the selected questions and their order when switching language.
+      setQuizQuestionIndices(Array.from({ length: MD_MESSAGE_QUIZ.length }, (_, index) => index)
+        .sort(() => Math.random() - 0.5).slice(0, 7));
     }
     // eslint-disable-next-line
-  }, [view, language]);
+  }, [view]);
 
-  const handleQuizComplete = (score: number) => {
-    updateTaskCompletion('task1', 7, score);
+  const handleQuizComplete = async (score: number) => {
+    await updateTaskCompletion('task1', 7, score);
+    setStartedQuiz(false);
     setView('completed');
   };
 
@@ -58,11 +58,18 @@ const MdMessageTask: React.FC = () => {
     }
   };
 
-  const confirmBack = () => {
-    setShowBackWarning(false);
-    // Mark as completed with current score
-    updateTaskCompletion('task1', 7, currentQuizScore);
-    setView('completed');
+  const confirmBack = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    setSaveError('');
+    try {
+      await handleQuizComplete(currentQuizScore);
+      setShowBackWarning(false);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Your score could not be saved. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const cancelBack = () => {
@@ -131,9 +138,10 @@ const MdMessageTask: React.FC = () => {
             </button>
             <h2 className="text-2xl font-extrabold text-black mb-4">Warning!!</h2>
             <p className="text-black mb-6">You will get only <strong>{currentQuizScore} points</strong>. All others answers will be considered incorrect answers. Are you sure want to do that?</p>
+            {saveError && <p role="alert" className="mb-4 text-red-700">{saveError}</p>}
             <div className="flex gap-4">
-              <button onClick={cancelBack} className="flex-1 py-2 bg-white text-black font-bold rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
-              <button onClick={confirmBack} className="flex-1 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">Confirm</button>
+              <button onClick={cancelBack} disabled={isSaving} className="flex-1 py-2 bg-white text-black font-bold rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
+              <button onClick={confirmBack} disabled={isSaving} className="flex-1 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">{isSaving ? t('saving_score') : 'Confirm'}</button>
             </div>
           </div>
         </div>

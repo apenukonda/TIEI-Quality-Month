@@ -1,11 +1,11 @@
 import React, { useContext, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { AppContext } from "../context/AppContext";
-import { Page, Department, Designation } from "../types";
+import { Page, Department } from "../types";
 // import { ToyotaLogo } from './icons';
 
 const AuthPage: React.FC = () => {
-  const { currentPage, setCurrentPage, currentUser, login, signup } =
+  const { currentPage, setCurrentPage, currentUser, login, signup, getRegistrationDepartments } =
     useContext(AppContext);
   const [isLogin, setIsLogin] = useState(currentPage === Page.LOGIN);
 
@@ -22,7 +22,6 @@ const AuthPage: React.FC = () => {
   // cleanup timers on unmount
   useEffect(() => {
     return () => {
-      if (nameWarnTimer.current) window.clearTimeout(nameWarnTimer.current);
       if (passWarnLoginTimer.current)
         window.clearTimeout(passWarnLoginTimer.current);
       if (passWarnSignupTimer.current)
@@ -51,26 +50,39 @@ const AuthPage: React.FC = () => {
   const [showSignupPass, setShowSignupPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
   // warnings when user types invalid characters
-  const [nameWarning, setNameWarning] = useState("");
   const [passWarningLogin, setPassWarningLogin] = useState("");
   const [passWarningSignup, setPassWarningSignup] = useState("");
   const [passWarningConfirm, setPassWarningConfirm] = useState("");
-  const nameWarnTimer = React.useRef<number | null>(null);
   const passWarnLoginTimer = React.useRef<number | null>(null);
   const passWarnSignupTimer = React.useRef<number | null>(null);
   const passWarnConfirmTimer = React.useRef<number | null>(null);
 
   // Signup state
   const [newUserId, setNewUserId] = useState("");
-  const [newName, setNewName] = useState("");
   const [newPasscode, setNewPasscode] = useState("");
   const [confirmPasscode, setConfirmPasscode] = useState("");
   const [passcodeError, setPasscodeError] = useState("");
-  const [newDepartment, setNewDepartment] = useState<Department | "">("");
-  const [newDesignation, setNewDesignation] = useState<Designation | "">("");
+  const [newDepartment, setNewDepartment] = useState("");
+  const [registrationDepartments, setRegistrationDepartments] = useState<string[]>([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(true);
+  const [departmentLoadError, setDepartmentLoadError] = useState("");
+  const [departmentLoadVersion, setDepartmentLoadVersion] = useState(0);
   const [signupMessage, setSignupMessage] = useState("");
   const [agreeDeclaration, setAgreeDeclaration] = useState(false);
   const [agreeError, setAgreeError] = useState("");
+
+  useEffect(() => {
+    if (isLogin) return;
+    let cancelled = false;
+    setLoadingDepartments(true);
+    setDepartmentLoadError("");
+    getRegistrationDepartments().then(departments => {
+      if (!cancelled) setRegistrationDepartments(departments);
+    }).catch(error => {
+      if (!cancelled) setDepartmentLoadError(error instanceof Error ? error.message : 'Departments could not be loaded. Please try again.');
+    }).finally(() => { if (!cancelled) setLoadingDepartments(false); });
+    return () => { cancelled = true; };
+  }, [isLogin, getRegistrationDepartments, departmentLoadVersion]);
 
   const validateUserId = (id: string): string | null => {
     // Employee ID should be digits only, length between 1 and 6
@@ -131,24 +143,7 @@ const AuthPage: React.FC = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    // sanitize name strictly to letters A-Z / a-z only
-    const sanitizedNewName = String(newName || "").replace(/[^A-Za-z]/g, "");
-    setNewName(sanitizedNewName);
-    if (!newUserId || !sanitizedNewName) {
-      setError(
-        "User ID and Name cannot be empty. Name must contain only letters A-Z or a-z."
-      );
-      // if name was empty due to invalid chars, show warning as well
-      if (!sanitizedNewName && newName) {
-        setNameWarning("Only letters A–Z are allowed");
-        if (nameWarnTimer.current) window.clearTimeout(nameWarnTimer.current);
-        nameWarnTimer.current = window.setTimeout(
-          () => setNameWarning(""),
-          3000
-        );
-      }
-      return;
-    }
+    if (loading || loadingDepartments || departmentLoadError) return;
 
     const userIdValidationError = validateUserId(newUserId);
     if (userIdValidationError) {
@@ -178,11 +173,6 @@ const AuthPage: React.FC = () => {
       return;
     }
 
-    if (!newDesignation) {
-      setError("Please select a designation.");
-      return;
-    }
-
     if (!agreeDeclaration) {
       setAgreeError(
         "Please confirm that the details provided are voluntarily by you."
@@ -194,26 +184,18 @@ const AuthPage: React.FC = () => {
     setError("");
     setSignupMessage("");
 
-    const result = await signup({
-      userId: newUserId,
-      name: newName,
-      department: newDepartment as Department,
-      designation: newDesignation as Designation,
-      passcode: newPasscode,
-    });
-
-    if (result.success) {
-      setSignupMessage("Account created! Redirecting to dashboard...");
-      // After signup, the user is automatically logged in.
-      // The onAuthStateChange listener in AppContext will handle redirecting to the dashboard.
-      // We no longer need to manually switch back to the login form.
-    } else {
-      setError(
-        result.error ||
-          "Failed to create account. User ID might already be in use."
-      );
+    try {
+      const result = await signup({ userId: newUserId, department: newDepartment, passcode: newPasscode });
+      if (result.success) {
+        setSignupMessage("Account created! Redirecting to dashboard...");
+      } else {
+        setError(result.error || "Failed to create account. Please try again.");
+      }
+    } catch {
+      setError("Failed to create account. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const toggleForm = () => {
@@ -441,6 +423,7 @@ const AuthPage: React.FC = () => {
                 maxLength={6}
                 placeholder="Enter 1-6 digits"
                 value={newUserId}
+                aria-label="Employee ID"
                 onChange={(e) => {
                   // Allow only digits and limit length to 6
                   const sanitized = e.target.value
@@ -453,92 +436,27 @@ const AuthPage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Name</label>
-              <input
-                type="text"
-                value={newName}
-                onChange={(e) => {
-                  // Allow only letters A-Z and a-z. Strip everything else.
-                  const raw = e.target.value || "";
-                  const sanitized = raw.replace(/[^A-Za-z]/g, "");
-                  if (raw !== sanitized) {
-                    setNameWarning("Only letters A–Z are allowed");
-                    if (nameWarnTimer.current)
-                      window.clearTimeout(nameWarnTimer.current);
-                    nameWarnTimer.current = window.setTimeout(
-                      () => setNameWarning(""),
-                      3000
-                    );
-                  }
-                  setNewName(sanitized);
-                  setError("");
-                }}
-                onPaste={(e) => {
-                  // Sanitize pasted text to letters only
-                  const paste =
-                    (e.clipboardData || (window as any).clipboardData).getData(
-                      "text"
-                    ) || "";
-                  const sanitized = paste.replace(/[^A-Za-z]/g, "");
-                  if (paste !== sanitized) {
-                    setNameWarning(
-                      "Pasted content contained invalid characters; only A–Z allowed"
-                    );
-                    if (nameWarnTimer.current)
-                      window.clearTimeout(nameWarnTimer.current);
-                    nameWarnTimer.current = window.setTimeout(
-                      () => setNameWarning(""),
-                      3000
-                    );
-                  }
-                  e.preventDefault();
-                  // append sanitized paste to current value
-                  setNewName((prev) => prev + sanitized);
-                }}
-                className={inputClass}
-                required
-              />
-              {nameWarning && (
-                <p className="text-yellow-600 text-xs mt-1">{nameWarning}</p>
-              )}
-            </div>
-            <div>
               <label className="text-sm font-medium text-gray-600">
                 Department
               </label>
               <select
                 value={newDepartment}
-                onChange={(e) => setNewDepartment(e.target.value as Department)}
+                onChange={(e) => { setNewDepartment(e.target.value); setError(""); }}
+                aria-label="Department"
+                disabled={loadingDepartments || Boolean(departmentLoadError)}
                 className={inputClass}
                 required
               >
-                <option value="">Select Department</option>
-                {Object.values(Department).map((dep) => (
+                <option value="">{loadingDepartments ? 'Loading departments...' : 'Select Department'}</option>
+                {registrationDepartments.map((dep) => (
                   <option key={dep} value={dep}>
                     {dep}
                   </option>
                 ))}
               </select>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-600">
-                Designation
-              </label>
-              <select
-                value={newDesignation}
-                onChange={(e) =>
-                  setNewDesignation(e.target.value as Designation)
-                }
-                className={inputClass}
-                required
-              >
-                <option value="">Select Designation</option>
-                {Object.values(Designation).map((des) => (
-                  <option key={des} value={des}>
-                    {des}
-                  </option>
-                ))}
-              </select>
+              {departmentLoadError && <p role="alert" className="text-red-500 text-sm mt-1">
+                {departmentLoadError} <button type="button" onClick={() => setDepartmentLoadVersion(version => version + 1)} className="underline">Retry</button>
+              </p>}
             </div>
             <div>
               <label className="text-sm font-medium text-gray-600">
@@ -550,6 +468,7 @@ const AuthPage: React.FC = () => {
                   inputMode="numeric"
                   pattern="[0-9]*"
                   value={newPasscode}
+                  aria-label="Passcode"
                   maxLength={4}
                   onChange={(e) => {
                     const raw = e.target.value || "";
@@ -654,6 +573,7 @@ const AuthPage: React.FC = () => {
                   inputMode="numeric"
                   pattern="[0-9]*"
                   value={confirmPasscode}
+                  aria-label="Confirm Passcode"
                   maxLength={4}
                   onChange={(e) => {
                     const raw = e.target.value || "";
@@ -777,13 +697,13 @@ const AuthPage: React.FC = () => {
               <p className="text-red-500 text-sm">{passcodeError}</p>
             )}
             {agreeError && <p className="text-red-500 text-sm">{agreeError}</p>}
-            {error && <p className="text-red-500 text-sm">{error}</p>}
+            {error && <p role="alert" className="text-red-500 text-sm">{error}</p>}
             {signupMessage && (
               <p className="text-green-500 text-sm">{signupMessage}</p>
             )}
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || loadingDepartments || Boolean(departmentLoadError)}
               className="w-full py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors transform hover:scale-105 disabled:bg-red-400 disabled:scale-100"
             >
               {loading ? "Creating..." : "Create Account"}
