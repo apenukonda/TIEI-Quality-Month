@@ -31,6 +31,7 @@ type ProfileRow = {
   name: string;
   department?: string | null;
   designation?: string | null;
+  manager_name?: string | null;
   score?: number | null;
 };
 
@@ -120,18 +121,50 @@ const Admin: React.FC = () => {
   // Profiles
   const fetchProfiles = async () => {
     try {
-      // Supabase select has an implicit cap (1000 rows). Use paginated fetch
-      // to ensure we retrieve all profiles in large deployments.
+      // 1. Try to fetch via RPC get_admin_profiles (joins profiles with employee_registry)
+      const { data: rpcData, error: rpcErr } = await (supabaseClient as any).rpc(
+        "get_admin_profiles",
+        { p_limit: 5000, p_offset: 0 }
+      );
+
+      if (!rpcErr && Array.isArray(rpcData) && rpcData.length > 0) {
+        setProfiles(
+          rpcData.map((d: any) => ({
+            id: d.id,
+            user_id: d.user_id,
+            name: d.name,
+            department: d.department,
+            designation: d.designation,
+            manager_name: d.manager_name || "N/A",
+            score: d.score,
+          }))
+        );
+        return;
+      }
+
+      // 2. Fallback: Paginated fetch from profiles table directly
       const pageSize = 1000;
       let from = 0;
       let allRows: any[] = [];
       while (true) {
         const to = from + pageSize - 1;
-        const { data, error } = await supabaseClient
+        let { data, error } = await supabaseClient
           .from("profiles")
-          .select("id, user_id, name, department, designation, score, role")
+          .select("id, user_id, name, department, designation, manager_name, score, role")
           .eq("role", "user")
           .range(from, to);
+
+        if (error) {
+          // If manager_name column does not exist on profiles table yet, query without it
+          const res = await supabaseClient
+            .from("profiles")
+            .select("id, user_id, name, department, designation, score, role")
+            .eq("role", "user")
+            .range(from, to);
+          data = res.data;
+          error = res.error;
+        }
+
         if (error) {
           console.error("Error fetching profiles (paged):", error.message || error);
           break;
@@ -145,13 +178,14 @@ const Admin: React.FC = () => {
         from += pageSize;
       }
 
-      // normalize to ProfileRow shape (role not stored on ProfileRow typically)
+      // normalize to ProfileRow shape
       setProfiles((allRows || []).map((d) => ({
         id: d.id,
         user_id: d.user_id,
         name: d.name,
         department: d.department,
         designation: d.designation,
+        manager_name: d.manager_name || "N/A",
         score: d.score,
       })) as ProfileRow[]);
     } catch (e) {
@@ -2394,6 +2428,7 @@ const Admin: React.FC = () => {
                             name: u.name,
                             department: u.department || "Unknown",
                             designation: u.designation || "Unknown",
+                            manager: u.manager_name || "N/A",
                             score: u.score,
                           }));
                           exportToCSV(rows, "registered_users.csv");
@@ -2411,6 +2446,7 @@ const Admin: React.FC = () => {
                           <th className="px-4 py-3">Name</th>
                           <th className="px-4 py-3">Department</th>
                           <th className="px-4 py-3">Designation</th>
+                          <th className="px-4 py-3">Manager</th>
                           <th className="px-4 py-3">Score</th>
                         </tr>
                       </thead>
@@ -2424,6 +2460,9 @@ const Admin: React.FC = () => {
                             <td className="px-4 py-3 text-sm">
                               {p.designation}
                             </td>
+                            <td className="px-4 py-3 text-sm">
+                              {p.manager_name || "-"}
+                            </td>
                             <td className="px-4 py-3 text-sm font-medium">
                               {p.score ?? "-"}
                             </td>
@@ -2432,7 +2471,7 @@ const Admin: React.FC = () => {
                         {displayedProfiles.length === 0 && (
                           <tr>
                             <td
-                              colSpan={4}
+                              colSpan={5}
                               className="px-4 py-8 text-center text-gray-500"
                             >
                               No registrations found.

@@ -66,14 +66,14 @@ describe('employee registration rules', () => {
   });
   it('blocks direct Auth insert with a mismatched department atomically', async () => {
     await db.exec('set role supabase_auth_admin;');
-    await expect(signup({ userId: '00001', department: 'TNGA - HEAD' })).rejects.toThrow('Please contact the admin');
+    await expect(signup({ userId: '00001', department: 'TNGA - HEAD' })).rejects.toThrow('Please check your Employee ID and Department or contact admin');
     await db.exec('reset role;');
     expect((await db.query('select count(*)::integer as total from auth.users')).rows).toEqual([{ total: 0 }]);
     expect((await db.query('select count(*)::integer as total from public.profiles')).rows).toEqual([{ total: 0 }]);
   });
   it('blocks missing employee metadata and an unknown number', async () => {
-    await expect(signup({})).rejects.toThrow('Please contact the admin');
-    await expect(signup({ userId: '987654', department: 'INFORMATION SYSTEMS' })).rejects.toThrow('Please contact the admin');
+    await expect(signup({})).rejects.toThrow('Please check your Employee ID and Department or contact admin');
+    await expect(signup({ userId: '987654', department: 'INFORMATION SYSTEMS' })).rejects.toThrow('Please check your Employee ID and Department or contact admin');
   });
   it('creates a profile with roster name and designation despite forged metadata', async () => {
     await db.exec('set role supabase_auth_admin;');
