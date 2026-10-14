@@ -199,7 +199,8 @@ const AdminDashboard: React.FC = () => {
         // total registered users: use profiles table (works with client RLS)
         const { count: profileCount, error: profileErr } = await supabaseClient
           .from("profiles")
-          .select("*", { count: "exact", head: true });
+          .select("*", { count: "exact", head: true })
+          .eq("role", "user");
         if (!profileErr && mounted) setTotalUsers(profileCount ?? 0);
 
         // number of users who submitted slogans (user_slogans)
@@ -520,7 +521,7 @@ const AdminDashboard: React.FC = () => {
     {
       id: "registered",
       title: "Registered Users",
-      value: totalUsers !== null ? String(totalUsers-1) : "—",
+      value: totalUsers !== null ? String(totalUsers) : "—",
       change: "",
       trend: "up",
       icon: (
@@ -722,7 +723,7 @@ const AdminDashboard: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   {(() => {
-                    const registered = totalUsers-1;
+                    const registered = totalUsers ?? 0;
                     const target = EXPECTED_REGISTRATION_COUNT;
                     const remaining = Math.max(target - registered, 0);
                     const data = [
@@ -754,7 +755,7 @@ const AdminDashboard: React.FC = () => {
               </ResponsiveContainer>
               <div className="-mt-52 text-center">
                 <div className="text-lg font-semibold text-gray-900">
-                  {(totalUsers-1)}
+                  {totalUsers ?? "—"}
                 </div>
                 <div className="text-xs text-gray-500">Registered</div>
               </div>
