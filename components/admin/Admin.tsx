@@ -53,6 +53,35 @@ const Admin: React.FC = () => {
     }
   };
 
+  const getManagerForUser = (userId?: any, employeeId?: any) => {
+    if (!userId && !employeeId) return "-";
+    const uStr = userId ? String(userId).trim().toLowerCase() : "";
+    const eStr = employeeId ? String(employeeId).trim().toLowerCase() : "";
+    const matched = profiles.find((p) => {
+      const pId = p.id ? String(p.id).trim().toLowerCase() : "";
+      const pUserId = p.user_id ? String(p.user_id).trim().toLowerCase() : "";
+      return (
+        (uStr && (pId === uStr || pUserId === uStr)) ||
+        (eStr && (pId === eStr || pUserId === eStr))
+      );
+    });
+    if (matched?.manager_name && matched.manager_name !== "N/A") {
+      return matched.manager_name;
+    }
+    return "-";
+  };
+
+  const resolveManager = (r: {
+    manager_name?: string | null;
+    user_id?: any;
+    employee_id?: any;
+  }) => {
+    if (r.manager_name && r.manager_name !== "N/A" && r.manager_name !== "-") {
+      return r.manager_name;
+    }
+    return getManagerForUser(r.user_id, r.employee_id);
+  };
+
   // Read initial state from URL params so refresh preserves the current admin tab
   const readUrlState = () => {
     if (typeof window === "undefined")
@@ -348,6 +377,7 @@ const Admin: React.FC = () => {
             name: r.name || r.user_id,
             department: r.department || "Unknown",
             designation: r.designation || "Unknown",
+            manager_name: r.manager_name || null,
             slogan: r.slogan || "",
             created_at: r.created_at || null,
           }));
@@ -458,6 +488,7 @@ const Admin: React.FC = () => {
             name: profile?.name || r.user_id,
             department: profile?.department || "Unknown",
             designation: profile?.designation || "Unknown",
+            manager_name: profile?.manager_name || null,
             slogan: r.slogan || "",
             created_at: r.created_at || null,
           };
@@ -495,6 +526,7 @@ const Admin: React.FC = () => {
             name: r.name || r.user_id,
             department: r.department || "Unknown",
             designation: r.designation || "Unknown",
+            manager_name: r.manager_name || null,
             created_at: r.created_at || null,
           }));
           // Only include rows that correspond to loaded profiles with role='user'.
@@ -609,6 +641,7 @@ const Admin: React.FC = () => {
             name: profile?.name || r.user_id,
             department: profile?.department || "Unknown",
             designation: profile?.designation || "Unknown",
+            manager_name: profile?.manager_name || null,
             created_at: r.created_at || null,
           };
         })
@@ -642,6 +675,7 @@ const Admin: React.FC = () => {
             name: r.name || r.user_id,
             department: r.department || "Unknown",
             designation: r.designation || "Unknown",
+            manager_name: r.manager_name || null,
             created_at: r.created_at || null,
           }));
           // Filter RPC results to only include users that exist in profiles with role='user'
@@ -755,6 +789,7 @@ const Admin: React.FC = () => {
             name: profile?.name || r.user_id,
             department: profile?.department || "Unknown",
             designation: profile?.designation || "Unknown",
+            manager_name: profile?.manager_name || null,
             created_at: r.updated_at || null,
           };
         })
@@ -804,6 +839,7 @@ const Admin: React.FC = () => {
         name: r.name,
         department: r.department || "Unknown",
         designation: r.designation || "Unknown",
+        manager_name: r.manager_name || null,
         score_m1:
           typeof r.score_m1 === "number"
             ? r.score_m1
@@ -893,6 +929,7 @@ const Admin: React.FC = () => {
         name: r.name || String(r.user_id),
         department: r.department || 'Unknown',
         designation: r.designation || 'Unknown',
+        manager_name: r.manager_name || null,
         score: typeof r.score === 'number' ? r.score : (r.score ? Number(r.score) : 0),
         finished: typeof r.finished === 'boolean' ? r.finished : ((r.completed_steps || 0) >= 7),
       }));
@@ -1601,13 +1638,17 @@ const Admin: React.FC = () => {
                     <div className="flex items-center justify-end mb-2">
                       <button
                         onClick={() => {
-                          const rows = displayedSloganRows.map((r) => ({
-                            employee_id: r.employee_id,
-                            name: r.name,
-                            department: r.department || "Unknown",
-                            designation: r.designation || "Unknown",
-                            slogan: r.slogan,
-                          }));
+                          const rows = displayedSloganRows.map((r) => {
+                            const mgr = resolveManager(r);
+                            return {
+                              employee_id: r.employee_id,
+                              name: r.name,
+                              department: r.department || "Unknown",
+                              designation: r.designation || "Unknown",
+                              manager: mgr !== "-" ? mgr : "N/A",
+                              slogan: r.slogan,
+                            };
+                          });
                           exportToCSV(rows, "slogan_submissions.csv");
                         }}
                         className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
@@ -1623,6 +1664,7 @@ const Admin: React.FC = () => {
                           <th className="px-4 py-3">Name</th>
                           <th className="px-4 py-3">Department</th>
                           <th className="px-4 py-3">Designation</th>
+                          <th className="px-4 py-3">Manager</th>
                           <th className="px-4 py-3">Slogan Submitted</th>
                         </tr>
                       </thead>
@@ -1635,13 +1677,14 @@ const Admin: React.FC = () => {
                             <td className="px-4 py-3 text-sm">{r.name}</td>
                             <td className="px-4 py-3 text-sm">{r.department}</td>
                             <td className="px-4 py-3 text-sm">{r.designation}</td>
+                            <td className="px-4 py-3 text-sm">{resolveManager(r)}</td>
                             <td className="px-4 py-3 text-sm">{r.slogan}</td>
                           </tr>
                         ))}
                         {displayedSloganRows.length === 0 && (
                           <tr>
                             <td
-                              colSpan={5}
+                              colSpan={6}
                               className="px-4 py-8 text-center text-gray-500"
                             >
                               No slogan submissions found for selected filters.
@@ -1783,12 +1826,16 @@ const Admin: React.FC = () => {
                     <div className="flex items-center justify-end mb-2">
                       <button
                         onClick={() => {
-                          const rows = displayedImageRows.map((r) => ({
-                            employee_id: r.employee_id,
-                            name: r.name,
-                            department: r.department || "Unknown",
-                            designation: r.designation || "Unknown",
-                          }));
+                          const rows = displayedImageRows.map((r) => {
+                            const mgr = resolveManager(r);
+                            return {
+                              employee_id: r.employee_id,
+                              name: r.name,
+                              department: r.department || "Unknown",
+                              designation: r.designation || "Unknown",
+                              manager: mgr !== "-" ? mgr : "N/A",
+                            };
+                          });
                           exportToCSV(rows, "cartoon_submissions.csv");
                         }}
                         className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
@@ -1804,6 +1851,7 @@ const Admin: React.FC = () => {
                           <th className="px-4 py-3">Name</th>
                           <th className="px-4 py-3">Department</th>
                           <th className="px-4 py-3">Designation</th>
+                          <th className="px-4 py-3">Manager</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 bg-white">
@@ -1815,12 +1863,13 @@ const Admin: React.FC = () => {
                             <td className="px-4 py-3 text-sm">{r.name}</td>
                             <td className="px-4 py-3 text-sm">{r.department}</td>
                             <td className="px-4 py-3 text-sm">{r.designation}</td>
+                            <td className="px-4 py-3 text-sm">{resolveManager(r)}</td>
                           </tr>
                         ))}
                         {displayedImageRows.length === 0 && (
                           <tr>
                             <td
-                              colSpan={4}
+                              colSpan={5}
                               className="px-4 py-8 text-center text-gray-500"
                             >
                               No cartoon submissions found for selected filters.
@@ -1967,10 +2016,14 @@ const Admin: React.FC = () => {
                     <div className="flex items-center justify-end mb-2">
                       <button
                         onClick={() => {
-                          const rows = displayedSuggestionRows.map((r) => ({
-                            employee_id: r.employee_id,
-                            name: r.name,
-                          }));
+                          const rows = displayedSuggestionRows.map((r) => {
+                            const mgr = resolveManager(r);
+                            return {
+                              employee_id: r.employee_id,
+                              name: r.name,
+                              manager: mgr !== "-" ? mgr : "N/A",
+                            };
+                          });
                           exportToCSV(rows, "suggestion_submissions.csv");
                         }}
                         className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
@@ -1984,6 +2037,7 @@ const Admin: React.FC = () => {
                         <tr className="text-left text-sm font-medium text-gray-700">
                           <th className="px-4 py-3">Employee ID</th>
                           <th className="px-4 py-3">Name</th>
+                          <th className="px-4 py-3">Manager</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 bg-white">
@@ -1993,12 +2047,13 @@ const Admin: React.FC = () => {
                               {r.employee_id}
                             </td>
                             <td className="px-4 py-3 text-sm">{r.name}</td>
+                            <td className="px-4 py-3 text-sm">{resolveManager(r)}</td>
                           </tr>
                         ))}
                         {displayedSuggestionRows.length === 0 && (
                           <tr>
                             <td
-                              colSpan={2}
+                              colSpan={3}
                               className="px-4 py-8 text-center text-gray-500"
                             >
                               No suggestion submissions found for selected
@@ -2094,20 +2149,24 @@ const Admin: React.FC = () => {
                     <div className="flex items-center justify-end mb-2">
                       <button
                         onClick={() => {
-                          const rows = displayedVideoRows.map((r) => ({
-                            employee_id: r.employee_id,
-                            name: r.name,
-                            department: r.department,
-                            designation: r.designation,
-                            score_m1: r.score_m1,
-                            score_m2: r.score_m2,
-                            score_m3: r.score_m3,
-                            total_score: r.total_score,
-                            task_score: r.task_score,
-                            m1: r.m1Finished,
-                            m2: r.m2Finished,
-                            m3: r.m3Finished,
-                          }));
+                          const rows = displayedVideoRows.map((r) => {
+                            const mgr = resolveManager(r);
+                            return {
+                              employee_id: r.employee_id,
+                              name: r.name,
+                              department: r.department,
+                              designation: r.designation,
+                              manager: mgr !== "-" ? mgr : "N/A",
+                              score_m1: r.score_m1,
+                              score_m2: r.score_m2,
+                              score_m3: r.score_m3,
+                              total_score: r.total_score,
+                              task_score: r.task_score,
+                              m1: r.m1Finished,
+                              m2: r.m2Finished,
+                              m3: r.m3Finished,
+                            };
+                          });
                           exportToCSV(rows, "video_completion.csv");
                         }}
                         className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
@@ -2123,6 +2182,7 @@ const Admin: React.FC = () => {
                           <th className="px-4 py-3">Name</th>
                           <th className="px-4 py-3">Department</th>
                           <th className="px-4 py-3">Designation</th>
+                          <th className="px-4 py-3">Manager</th>
                           <th className="px-4 py-3">Score</th>
                         </tr>
                       </thead>
@@ -2139,6 +2199,9 @@ const Admin: React.FC = () => {
                             <td className="px-4 py-3 text-sm">
                               {r.designation}
                             </td>
+                            <td className="px-4 py-3 text-sm">
+                              {resolveManager(r)}
+                            </td>
                             <td className="px-4 py-3 text-sm font-medium">
                               {r.score}
                             </td>
@@ -2147,7 +2210,7 @@ const Admin: React.FC = () => {
                         {displayedVideoRows.length === 0 && (
                           <tr>
                             <td
-                              colSpan={5}
+                              colSpan={6}
                               className="px-4 py-8 text-center text-gray-500"
                             >
                               No video completion data found for selected
@@ -2283,13 +2346,17 @@ const Admin: React.FC = () => {
                       <div className="flex items-center justify-end mb-2">
                       <button
                         onClick={() => {
-                          const rows = displayedMdRows.map((r) => ({
-                            employee_id: r.employee_id,
-                            name: r.name,
-                            department: r.department,
-                            designation: r.designation,
-                            score: r.score,
-                          }));
+                          const rows = displayedMdRows.map((r) => {
+                            const mgr = resolveManager(r);
+                            return {
+                              employee_id: r.employee_id,
+                              name: r.name,
+                              department: r.department,
+                              designation: r.designation,
+                              manager: mgr !== "-" ? mgr : "N/A",
+                              score: r.score,
+                            };
+                          });
                           exportToCSV(rows, "md_message_completion.csv");
                         }}
                         className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
@@ -2305,6 +2372,7 @@ const Admin: React.FC = () => {
                           <th className="px-4 py-3">Name</th>
                           <th className="px-4 py-3">Department</th>
                           <th className="px-4 py-3">Designation</th>
+                          <th className="px-4 py-3">Manager</th>
                           <th className="px-4 py-3">Score (task1)</th>
                         </tr>
                       </thead>
@@ -2319,6 +2387,9 @@ const Admin: React.FC = () => {
                             <td className="px-4 py-3 text-sm">
                               {r.designation}
                             </td>
+                            <td className="px-4 py-3 text-sm">
+                              {resolveManager(r)}
+                            </td>
                             <td className="px-4 py-3 text-sm font-medium">
                               {r.score}
                             </td>
@@ -2327,7 +2398,7 @@ const Admin: React.FC = () => {
                         {displayedMdRows.length === 0 && (
                           <tr>
                             <td
-                              colSpan={5}
+                              colSpan={6}
                               className="px-4 py-8 text-center text-gray-500"
                             >
                               No MD Message completion data found for selected
@@ -2567,6 +2638,7 @@ const Admin: React.FC = () => {
                           <th className="px-4 py-3">Name</th>
                           <th className="px-4 py-3">Department</th>
                           <th className="px-4 py-3">Designation</th>
+                          <th className="px-4 py-3">Manager</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 bg-white">
@@ -2580,12 +2652,15 @@ const Admin: React.FC = () => {
                             <td className="px-4 py-3 text-sm">
                               {p.designation}
                             </td>
+                            <td className="px-4 py-3 text-sm">
+                              {p.manager_name || "-"}
+                            </td>
                           </tr>
                         ))}
                         {profiles.length === 0 && (
                           <tr>
                             <td
-                              colSpan={4}
+                              colSpan={5}
                               className="px-4 py-8 text-center text-gray-500"
                             >
                               No profiles found.
