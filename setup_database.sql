@@ -4,6 +4,8 @@
 -- Run this script in your Supabase SQL Editor (Dashboard -> SQL Editor -> New query -> Run).
 -- This script creates all required tables, triggers, Row Level Security (RLS) policies,
 -- and Stored Procedures (RPCs) used across the application.
+-- For employee-verified signup, also apply employee_registry.sql, import the HR
+-- workbook, then apply employee_registration.sql (see EMPLOYEE_REGISTRATION.md).
 -- ==============================================================================
 
 -- 1. Profiles Table & Trigger
@@ -216,164 +218,151 @@ create policy "Module m3 viewable by everyone." on public.module_m3_progress for
 create policy "Users manage module m3." on public.module_m3_progress for all using (auth.uid() = user_id);
 
 
--- 7. Stored Procedure: handle_task_completion
-create or replace function public.handle_task_completion(
-    task_id_in text,
-    user_id_in uuid,
-    completed_steps_in int,
-    score_earned_in int
-)
+-- 7-8. Atomic score updates (also available separately in score_updates.sql)
+create or replace function public.refresh_user_score(user_id_in uuid)
 returns int
 language plpgsql
 security definer
+set search_path = public, pg_temp
 as $$
 declare
-  new_total_score int := 0;
-  total_user_tasks int := 0;
-  m1_sum int := 0;
-  m2_sum int := 0;
-  m3_sum int := 0;
+  module_id text;
+  task_count int;
+  score_expression text;
+  completion_expression text;
+  module_score int;
+  module_completed int;
+  advanced_score int := 0;
+  advanced_steps int := 0;
+  has_module_data boolean := false;
+  total_score int;
 begin
-  insert into public.user_tasks (user_id, task_id, completed_steps, score, updated_at)
-  values (user_id_in, task_id_in, completed_steps_in, score_earned_in, now())
-  on conflict (user_id, task_id)
-  do update set
-    completed_steps = excluded.completed_steps,
-    score = excluded.score,
-    updated_at = now();
+  -- Serialize changes for one user before reading or updating any totals.
+  perform 1 from public.profiles where id = user_id_in for update;
+  if not found then raise exception 'User profile does not exist'; end if;
 
-  select coalesce(sum(score), 0) into total_user_tasks
-  from public.user_tasks
-  where user_id = user_id_in;
-
-  begin
-    select coalesce(sum(score), 0) into m1_sum from public.module_m1_progress where user_id = user_id_in;
-  exception when undefined_table then
-    m1_sum := 0;
-  end;
-
-  begin
-    select coalesce(sum(score), 0) into m2_sum from public.module_m2_progress where user_id = user_id_in;
-  exception when undefined_table then
-    m2_sum := 0;
-  end;
-
-  begin
-    select coalesce(sum(score), 0) into m3_sum from public.module_m3_progress where user_id = user_id_in;
-  exception when undefined_table then
-    m3_sum := 0;
-  end;
-
-  new_total_score := greatest(total_user_tasks, coalesce(m1_sum, 0) + coalesce(m2_sum, 0) + coalesce(m3_sum, 0));
-
-  update public.profiles
-  set score = new_total_score, updated_at = now()
-  where id = user_id_in
-  returning score into new_total_score;
-
-  return new_total_score;
-end;
-$$;
-
-
--- 8. Stored Procedure: update_module_task
-create or replace function public.update_module_task(
-  module_name text,
-  user_id_in uuid,
-  task_index int,
-  completed boolean,
-  score int
-)
-returns int
-language plpgsql
-security definer
-as $$
-declare
-  mod_clean text := lower(trim(module_name));
-  new_total_score int := 0;
-  total_user_tasks int := 0;
-  m1_sum int := 0;
-  m2_sum int := 0;
-  m3_sum int := 0;
-begin
-  if mod_clean = 'm1' then
-    insert into public.module_m1_progress (user_id) values (user_id_in)
-    on conflict (user_id) do nothing;
-    
-    if task_index = 1 then
-      update public.module_m1_progress set task1_completed = completed, task1_score = score where user_id = user_id_in;
-    elsif task_index = 2 then
-      update public.module_m1_progress set task2_completed = completed, task2_score = score where user_id = user_id_in;
-    elsif task_index = 3 then
-      update public.module_m1_progress set task3_completed = completed, task3_score = score where user_id = user_id_in;
-    elsif task_index = 4 then
-      update public.module_m1_progress set task4_completed = completed, task4_score = score where user_id = user_id_in;
-    elsif task_index = 5 then
-      update public.module_m1_progress set task5_completed = completed, task5_score = score where user_id = user_id_in;
-    elsif task_index = 6 then
-      update public.module_m1_progress set task6_completed = completed, task6_score = score where user_id = user_id_in;
+  foreach module_id in array array['m1', 'm2', 'm3'] loop
+    task_count := case module_id when 'm1' then 6 when 'm2' then 4 else 5 end;
+    select string_agg(format('coalesce(task%s_score, 0)', n), ' + '),
+           string_agg(format('coalesce(task%s_completed, false)::int', n), ' + ')
+      into score_expression, completion_expression
+      from generate_series(1, task_count) n;
+    execute format('select %s, %s from public.%I where user_id = $1',
+      score_expression, completion_expression, 'module_' || module_id || '_progress')
+      into module_score, module_completed using user_id_in;
+    if module_score is not null then
+      has_module_data := true;
+      advanced_score := advanced_score + module_score;
+      advanced_steps := advanced_steps + module_completed * 7;
+      execute format('update public.%I set score = $1 where user_id = $2',
+        'module_' || module_id || '_progress') using module_score, user_id_in;
     end if;
+  end loop;
 
-    update public.module_m1_progress
-    set score = coalesce(task1_score,0) + coalesce(task2_score,0) + coalesce(task3_score,0) + coalesce(task4_score,0) + coalesce(task5_score,0) + coalesce(task6_score,0),
-        completed_at = now()
-    where user_id = user_id_in;
-
-  elsif mod_clean = 'm2' then
-    insert into public.module_m2_progress (user_id) values (user_id_in)
-    on conflict (user_id) do nothing;
-    
-    if task_index = 1 then
-      update public.module_m2_progress set task1_completed = completed, task1_score = score where user_id = user_id_in;
-    elsif task_index = 2 then
-      update public.module_m2_progress set task2_completed = completed, task2_score = score where user_id = user_id_in;
-    elsif task_index = 3 then
-      update public.module_m2_progress set task3_completed = completed, task3_score = score where user_id = user_id_in;
-    elsif task_index = 4 then
-      update public.module_m2_progress set task4_completed = completed, task4_score = score where user_id = user_id_in;
-    end if;
-
-    update public.module_m2_progress
-    set score = coalesce(task1_score,0) + coalesce(task2_score,0) + coalesce(task3_score,0) + coalesce(task4_score,0),
-        completed_at = now()
-    where user_id = user_id_in;
-
-  elsif mod_clean = 'm3' then
-    insert into public.module_m3_progress (user_id) values (user_id_in)
-    on conflict (user_id) do nothing;
-    
-    if task_index = 1 then
-      update public.module_m3_progress set task1_completed = completed, task1_score = score where user_id = user_id_in;
-    elsif task_index = 2 then
-      update public.module_m3_progress set task2_completed = completed, task2_score = score where user_id = user_id_in;
-    elsif task_index = 3 then
-      update public.module_m3_progress set task3_completed = completed, task3_score = score where user_id = user_id_in;
-    elsif task_index = 4 then
-      update public.module_m3_progress set task4_completed = completed, task4_score = score where user_id = user_id_in;
-    elsif task_index = 5 then
-      update public.module_m3_progress set task5_completed = completed, task5_score = score where user_id = user_id_in;
-    end if;
-
-    update public.module_m3_progress
-    set score = coalesce(task1_score,0) + coalesce(task2_score,0) + coalesce(task3_score,0) + coalesce(task4_score,0) + coalesce(task5_score,0),
-        completed_at = now()
-    where user_id = user_id_in;
+  if has_module_data then
+    -- task6 mirrors all module quizzes. Preserve legacy earned points when
+    -- older clients stored an aggregate without individual module records.
+    insert into public.user_tasks (user_id, task_id, completed_steps, score, updated_at)
+      values (user_id_in, 'task6', advanced_steps, advanced_score, now())
+      on conflict (user_id, task_id) do update set
+        completed_steps = greatest(user_tasks.completed_steps, excluded.completed_steps),
+        score = greatest(user_tasks.score, excluded.score),
+        updated_at = case when excluded.completed_steps > user_tasks.completed_steps
+          or excluded.score > user_tasks.score then now() else user_tasks.updated_at end;
   end if;
 
-  select coalesce(sum(score), 0) into total_user_tasks from public.user_tasks where user_id = user_id_in;
-  select coalesce(sum(score), 0) into m1_sum from public.module_m1_progress where user_id = user_id_in;
-  select coalesce(sum(score), 0) into m2_sum from public.module_m2_progress where user_id = user_id_in;
-  select coalesce(sum(score), 0) into m3_sum from public.module_m3_progress where user_id = user_id_in;
-
-  new_total_score := greatest(total_user_tasks, coalesce(m1_sum,0) + coalesce(m2_sum,0) + coalesce(m3_sum,0));
-
-  update public.profiles
-  set score = new_total_score, updated_at = now()
-  where id = user_id_in;
-
-  return new_total_score;
+  -- Count every activity once, including the task6 module aggregate.
+  select coalesce(sum(score), 0) into total_score
+    from public.user_tasks where user_id = user_id_in;
+  update public.profiles set score = total_score,
+    updated_at = case when score is distinct from total_score then now() else updated_at end
+    where id = user_id_in;
+  return total_score;
 end;
 $$;
+
+create or replace function public.handle_task_completion(
+  task_id_in text, user_id_in uuid, completed_steps_in int, score_earned_in int
+)
+returns int
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  max_points int;
+  max_steps int;
+begin
+  if auth.uid() is null or auth.uid() <> user_id_in then
+    raise exception 'Please sign in to save your own score' using errcode = '42501';
+  end if;
+  max_points := case task_id_in when 'task1' then 7 when 'task3' then 5
+    when 'task4' then 3 when 'task5' then 3 else null end;
+  max_steps := case task_id_in when 'task1' then 7 else 1 end;
+  if max_points is null or score_earned_in is null or completed_steps_in is null
+     or score_earned_in < 0 or score_earned_in > max_points
+     or completed_steps_in < 0 or completed_steps_in > max_steps
+     or (completed_steps_in = 0 and score_earned_in <> 0) then
+    raise exception 'Invalid task result' using errcode = '22023';
+  end if;
+  perform 1 from public.profiles where id = user_id_in for update;
+  if not found then raise exception 'User profile does not exist'; end if;
+
+  insert into public.user_tasks (user_id, task_id, completed_steps, score, updated_at)
+    values (user_id_in, task_id_in, completed_steps_in, score_earned_in, now())
+    on conflict (user_id, task_id) do update set
+      completed_steps = greatest(user_tasks.completed_steps, excluded.completed_steps),
+      score = greatest(user_tasks.score, excluded.score),
+      updated_at = case when excluded.completed_steps > user_tasks.completed_steps
+        or excluded.score > user_tasks.score then now() else user_tasks.updated_at end;
+  return public.refresh_user_score(user_id_in);
+end;
+$$;
+
+create or replace function public.update_module_task(
+  module_name text, user_id_in uuid, task_index int, completed boolean, score int
+)
+returns int
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  module_id text := lower(trim(module_name));
+  task_count int;
+  table_name text;
+  score_column text;
+  completed_column text;
+begin
+  if auth.uid() is null or auth.uid() <> user_id_in then
+    raise exception 'Please sign in to save your own score' using errcode = '42501';
+  end if;
+  task_count := case module_id when 'm1' then 6 when 'm2' then 4 when 'm3' then 5 else null end;
+  if task_count is null or task_index is null or task_index < 1 or task_index > task_count
+     or score is null or score < 0 or score > 7 or completed is distinct from true then
+    raise exception 'Invalid module quiz result' using errcode = '22023';
+  end if;
+  perform 1 from public.profiles where id = user_id_in for update;
+  if not found then raise exception 'User profile does not exist'; end if;
+
+  table_name := 'module_' || module_id || '_progress';
+  score_column := 'task' || task_index || '_score';
+  completed_column := 'task' || task_index || '_completed';
+  execute format('insert into public.%I (user_id) values ($1) on conflict (user_id) do nothing', table_name)
+    using user_id_in;
+  -- Bound parameters avoid the old ambiguity between the score argument and
+  -- the module table's score column. Repeated requests keep one best result.
+  execute format('update public.%I set %I = true, %I = greatest(coalesce(%I, 0), $1), completed_at = now() where user_id = $2',
+    table_name, completed_column, score_column, score_column) using score, user_id_in;
+  return public.refresh_user_score(user_id_in);
+end;
+$$;
+
+revoke all on function public.refresh_user_score(uuid) from public, anon, authenticated;
+revoke all on function public.handle_task_completion(text, uuid, int, int) from public, anon;
+revoke all on function public.update_module_task(text, uuid, int, boolean, int) from public, anon;
+grant execute on function public.handle_task_completion(text, uuid, int, int) to authenticated;
+grant execute on function public.update_module_task(text, uuid, int, boolean, int) to authenticated;
 
 
 -- 9. Stored Procedure: get_md_completions

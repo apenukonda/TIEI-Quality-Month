@@ -1,12 +1,12 @@
 
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { Question } from '../types';
 import { CheckCircleIcon, XCircleIcon } from './icons';
 import { AppContext } from '../context/AppContext';
 
 interface QuizProps {
   questions: Question[];
-  onComplete: (score: number) => void;
+  onComplete: (score: number) => void | Promise<void>;
   onScoreUpdate?: (score: number) => void;
   onShowResult?: (score: number) => void;
   quizId?: string;
@@ -21,17 +21,14 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete, onScoreUpdate, onSho
   const [score, setScore] = useState(0);
   const [timer, setTimer] = useState(TIMER_DURATION);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const answerLocked = useRef(false);
+  const submissionLocked = useRef(false);
   // Modal is shown by parent via onShowResult prop. Quiz no longer manages result modal UI.
 
   const currentQuestion = questions && questions.length > 0 ? questions[currentQuestionIndex] : undefined;
-  const isCorrect = currentQuestion ? selectedOption === currentQuestion.correctAnswer : false;
-  const { t, language, currentUser } = useContext(AppContext);
-  const [langVersion, setLangVersion] = useState(0);
-
-  useEffect(() => {
-    // bump version to cause dependent effects/renders when language changes
-    setLangVersion(v => v + 1);
-  }, [language]);
+  const { t, language } = useContext(AppContext);
 
   // helper to get localized text. The codebase sometimes uses strings in the
   // format 'English-Kannada' inside constants. When language === 'kn' prefer
@@ -70,55 +67,56 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete, onScoreUpdate, onSho
   };
 
   useEffect(() => {
-    if (showFeedback) return;
+    if (showFeedback || isSaving || !currentQuestion) return;
 
     const interval = setInterval(() => {
-      setTimer(prev => {
-        if (prev === 1) {
-          if (!selectedOption) {
-            setSelectedOption('timeout');
-            setShowFeedback(true);
-          } else {
-            handleNext();
-          }
-          return TIMER_DURATION;
-        }
-        return prev - 1;
-      });
+      setTimer(prev => Math.max(0, prev - 1));
     }, 1000);
 
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentQuestionIndex, showFeedback, langVersion]);
+  }, [currentQuestionIndex, showFeedback, isSaving, Boolean(currentQuestion)]);
+
+  useEffect(() => {
+    if (timer === 0 && !answerLocked.current && currentQuestion) {
+      answerLocked.current = true;
+      setSelectedOption('timeout');
+      setShowFeedback(true);
+    }
+  }, [timer, currentQuestion]);
 
   const handleOptionSelect = (option: string) => {
-    if (showFeedback) return;
+    if (answerLocked.current || isSaving) return;
     if (!currentQuestion) return;
+    answerLocked.current = true;
     setSelectedOption(option);
-    if (option === currentQuestion.correctAnswer) {
-      setScore(s => {
-        const newScore = s + 1;
-        onScoreUpdate?.(newScore);
-        return newScore;
-      });
-    } else {
-      onScoreUpdate?.(score);
-    }
+    const newScore = score + (option === currentQuestion.correctAnswer ? 1 : 0);
+    setScore(newScore);
+    onScoreUpdate?.(newScore);
     setShowFeedback(true);
   };
 
-  const handleNext = () => {
-    setShowFeedback(false);
-    setSelectedOption(null);
-    setTimer(TIMER_DURATION);
+  const handleNext = async () => {
+    if (!showFeedback || !answerLocked.current || submissionLocked.current) return;
     if (currentQuestionIndex < questions.length - 1) {
+      answerLocked.current = false;
+      setShowFeedback(false);
+      setSelectedOption(null);
+      setTimer(TIMER_DURATION);
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
-      // When it's the last question and user clicks finish
-      // Inform parent that quiz is complete first
-      onComplete(score);
-      // Ask parent to show the result UI if it wants to (call safely)
-      if (typeof onShowResult === 'function') onShowResult(score);
+      submissionLocked.current = true;
+      setIsSaving(true);
+      setSaveError('');
+      try {
+        await onComplete(score);
+        onShowResult?.(score);
+      } catch (error) {
+        setSaveError(error instanceof Error ? error.message : 'Your score could not be saved. Please try again.');
+        submissionLocked.current = false;
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
@@ -150,6 +148,10 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete, onScoreUpdate, onSho
     setScore(0);
     setTimer(TIMER_DURATION);
     setShowFeedback(false);
+    setIsSaving(false);
+    setSaveError('');
+    answerLocked.current = false;
+    submissionLocked.current = false;
   }, [quizId]);
 
   // If there are no questions or currentQuestion is undefined, render a loading fallback
@@ -163,12 +165,6 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete, onScoreUpdate, onSho
       </div>
     );
   }
-
-  // Diagnostic: log whether currentQuestion includes Kannada fields when rendering
-  try {
-    // eslint-disable-next-line no-console
-    console.log('[i18n][Quiz] render language=', language, 'currentQuestion.textKn=', (currentQuestion as any)?.textKn);
-  } catch (e) {}
 
   return (
     <div className="bg-white/95 backdrop-blur p-6 rounded-2xl shadow-2xl w-full max-w-3xl animate-fade-in relative">
@@ -237,12 +233,14 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete, onScoreUpdate, onSho
             <p className="mt-4 text-slate-600 text-center mx-auto max-w-2xl">{t('correct_answer_was').replace(':','')} <strong className="text-slate-800">{localize(currentQuestion.correctAnswer)}</strong></p>
           )}
           <div className="mt-4 flex justify-center">
-            <button onClick={handleNext} className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
-              {currentQuestionIndex < questions.length - 1 ? t('next_question') : t('finish_quiz')}
+            <button onClick={handleNext} disabled={isSaving} className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50">
+              {isSaving ? t('saving_score') : saveError ? t('retry_save') : currentQuestionIndex < questions.length - 1 ? t('next_question') : t('finish_quiz')}
             </button>
           </div>
         </div>
       )}
+
+      {saveError && <p role="alert" className="mt-4 text-center text-red-700">{saveError}</p>}
 
       {/* Result modal UI is now managed by parent components via onShowResult */}
     </div>

@@ -3,7 +3,6 @@ import React, {
   useContext,
   useEffect,
   useRef,
-  useCallback,
 } from "react";
 import supabaseClient from '../context/supabaseClient';
 import { AppContext } from "../context/AppContext";
@@ -44,6 +43,7 @@ const VideoTask: React.FC = () => {
     updateTaskCompletion,
   updateModuleTask,
     getVideoProgress,
+    getModuleQuizProgress,
     updateVideoProgress,
     t,
     language,
@@ -107,45 +107,14 @@ const VideoTask: React.FC = () => {
   const [currentQuizScore, setCurrentQuizScore] = useState(0);
   const [showResultModal, setShowResultModal] = useState(false);
   const [resultScore, setResultScore] = useState<number | null>(null);
-  // Track per-video quiz scores
-  const [quizScores, setQuizScores] = useState<{ [videoId: string]: number }>(
-    {}
-  );
-
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const saveInFlight = useRef(false);
+  const [completedQuizzes, setCompletedQuizzes] = useState<Record<string, boolean>>({});
+  const [isLoadingProgress, setIsLoadingProgress] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [progressLoadVersion, setProgressLoadVersion] = useState(0);
   const QUESTIONS_PER_VIDEO = 7;
-
-  // Helper: fetch existing stored task6 score (if any)
-  const getExistingTask6Score = async (): Promise<number> => {
-    if (!currentUser) return 0;
-    try {
-      const { data, error } = await supabaseClient
-        .from('user_tasks')
-        .select('score')
-        .eq('user_id', currentUser.id)
-        .eq('task_id', 'task6')
-        .single();
-      if (error) return 0;
-      return (data && data.score) ? Number(data.score) : 0;
-    } catch (e) {
-      return 0;
-    }
-  };
-
-  // Helper: try to compute total from module progress tables if present
-  const getModuleProgressTotal = async (): Promise<number> => {
-    if (!currentUser) return 0;
-    const tables = ['module_m1_progress', 'module_m2_progress', 'module_m3_progress'];
-    let sum = 0;
-    for (const tbl of tables) {
-      try {
-        const { data, error } = await supabaseClient.from(tbl).select('score').eq('user_id', currentUser.id);
-        if (!error && data) sum += (data as any[]).reduce((s, r) => s + (r.score || 0), 0);
-      } catch (e) {
-        // ignore table errors
-      }
-    }
-    return sum;
-  };
 
   const getRpcModuleName = (moduleId?: string) => {
     if (!moduleId) return '';
@@ -157,25 +126,32 @@ const VideoTask: React.FC = () => {
 
   // (currentModule/currentVideo are declared later in the file; effects reference module by index)
 
-  const fetchInitialProgress = useCallback(async () => {
+  useEffect(() => {
+    let cancelled = false;
     if (currentUser) {
-      const progress = await getVideoProgress(currentUser.id);
-      const typedProgress = progress as VideoProgress;
-      setVideoProgress(typedProgress || {});
-      // Do NOT call updateTaskCompletion here; score should only update after quiz completion
+      setIsLoadingProgress(true);
+      setLoadError('');
+      Promise.all([getVideoProgress(currentUser.id), getModuleQuizProgress(currentUser.id)])
+        .then(([progress, quizzes]) => {
+          if (!cancelled) {
+            setVideoProgress((progress as VideoProgress) || {});
+            setCompletedQuizzes(quizzes);
+          }
+        }).catch(error => {
+          if (!cancelled) setLoadError(error instanceof Error ? error.message : 'Saved progress could not be loaded.');
+        }).finally(() => { if (!cancelled) setIsLoadingProgress(false); });
     }
-  }, [currentUser, getVideoProgress, updateTaskCompletion]);
+    return () => { cancelled = true; };
+    // Reload only for a different user, not every score change.
+  }, [currentUser?.id, progressLoadVersion]);
 
   useEffect(() => {
-    fetchInitialProgress();
-    // If a module was pre-selected (from Knowledge Centre), open its videos
-    if (typeof selectedModuleIndex === 'number' && selectedModuleIndex !== null) {
+    if (selectedModuleIndex !== null) {
       setCurrentModuleIndex(selectedModuleIndex);
       setView('videos');
-      // Clear the selection to avoid re-opening on remount
       setSelectedModuleIndex(null);
     }
-  }, [fetchInitialProgress]);
+  }, [selectedModuleIndex, setSelectedModuleIndex]);
 
   // Fix: Reset quiz questions when language changes for M2 Task 1, Task 2, and Task 3
   useEffect(() => {
@@ -264,7 +240,7 @@ const VideoTask: React.FC = () => {
           onStateChange: (event: any) => {
             if (event.data === (window as any).YT.PlayerState.ENDED) {
               const duration = event.target.getDuration();
-              updateVideoProgress(videoId, duration, true);
+              updateVideoProgress(videoId, duration, true).catch(error => console.error(error));
               setVideoProgress(prev => ({
                 ...prev,
                 [videoId]: {
@@ -324,7 +300,7 @@ const VideoTask: React.FC = () => {
               videoId,
               currentTime,
               currentProgress.isComplete
-            );
+            ).catch(error => console.error(error));
             return {
               ...prev,
               [videoId]: { ...currentProgress, watchedSeconds: currentTime },
@@ -357,136 +333,35 @@ const VideoTask: React.FC = () => {
     return shuffled.slice(0, count);
   };
 
-  const handleQuizComplete = useCallback(
-    async (score: number) => {
-      const currentModule = ADVANCED_MODULES[currentModuleIndex];
-      const currentVideo = currentModule.videos[currentVideoIndex];
-      const videoId = currentVideo.id;
-
-      // Mark video as complete and update progress
-      await updateVideoProgress(
-        videoId,
-        videoProgress[videoId]?.watchedSeconds || videoDuration,
-        true
-      );
-      // After we've updated the DB, fetch authoritative progress to avoid stale state
-      try {
-        let freshProgress: VideoProgress = {};
-        if (currentUser) {
-          const fetched = await getVideoProgress(currentUser.id);
-          freshProgress = (fetched as VideoProgress) || {};
-        }
-
-        // Ensure the current video is marked complete in the local snapshot
-        const updatedVP = {
-          ...freshProgress,
-          [videoId]: {
-            watchedSeconds: freshProgress[videoId]?.watchedSeconds || videoDuration,
-            isComplete: true,
-          },
-        };
-        setVideoProgress(updatedVP);
-
-  // Persist cumulative per-task score using authoritative progress
-  const questionsPerVideo = QUESTIONS_PER_VIDEO;
-        const completedVideos = Object.values(updatedVP).filter(
-          (p: { isComplete: boolean }) => p.isComplete
-        ).length;
-
-        // Build the updated per-video scores map synchronously so we can compute
-        // an authoritative total and persist it exactly once. Avoid calling
-        // getTaskScore() + addition because that can lead to races or double
-        // counting if multiple updates happen concurrently.
-        const updatedScoresMap = { ...(quizScores || {}), [videoId]: score };
-        setQuizScores(updatedScoresMap);
-
-        try {
-          const totalScore = Object.values(updatedScoresMap).reduce((sum: number, s: number) => sum + (s || 0), 0);
-          const completedSteps = completedVideos * questionsPerVideo;
-          console.debug('handleQuizComplete: persisting task6', { videoId, score, updatedScoresMap, totalScore, completedSteps });
-
-          // Persist per-module progress (module_m{n}_progress). This RPC will
-          // set the appropriate taskX_completed=true and taskX_score to the
-          // passed score for the currently authenticated user.
-          try {
-            const moduleId = currentModule?.id || '';
-            const moduleName = getRpcModuleName(moduleId);
-            console.debug('VideoTask about to call updateModuleTask', { moduleId, moduleName, videoIndex: currentVideoIndex, score, userId: currentUser?.id });
-            if (moduleName && typeof updateModuleTask === 'function') {
-              try {
-                const res = await updateModuleTask(moduleName, currentVideoIndex + 1, true, score);
-                console.debug('VideoTask updateModuleTask returned', { res });
-                // If module RPC returned successfully, refresh the per-task row
-                // by calling updateTaskCompletion with an authoritative total
-                // computed from module progress so the dashboard card updates.
-                try {
-                  if (currentUser) {
-                    // Optimistically update the UI progress for task6 so the
-                    // EventCard progress bar reacts immediately while we
-                    // refresh the authoritative rows in the background.
-                    try { if (typeof (fetchUserTasks) === 'function') await fetchUserTasks(currentUser.id); } catch(e) { console.debug('fetchUserTasks failed', e); }
-                    try { if (typeof (setTaskCompletedSteps) === 'function') setTaskCompletedSteps('task6', completedSteps); } catch(e) { console.debug('setTaskCompletedSteps failed', e); }
-                  }
-                } catch (e) {
-                  console.debug('Failed to fetchUserTasks after module RPC (non-fatal)', e);
-                }
-              } catch (e) {
-                console.debug('updateModuleTask failed (non-fatal)', e);
-              }
-            }
-          } catch (e) {
-            console.error('Error calling updateModuleTask RPC:', e);
-          }
-
-          // Compute authoritative total: prefer the larger of our computed
-          // totalScore (sum of per-video quiz scores) and any score aggregated
-          // in the module progress tables (to avoid accidental decreases).
-          try {
-            // Do not pass the combined authoritative total to updateTaskCompletion; pass
-            // the per-task totalScore (sum of quiz scores) so the DB function will
-            // upsert the task6 row correctly. The DB will recompute profiles.score
-            // by summing user_tasks and comparing with module progress as needed.
-            // For module quizzes (task6) we only update the module progress table here.
-            // The profile total will be recomputed server-side by triggers/helper functions.
-            // Do NOT call updateTaskCompletion for task6 to avoid updating profiles directly.
-          } catch (e) {
-            // If updateModuleTask fails, do not update profiles directly here.
-            // Module progress was attempted; the DB trigger/helper will recompute profiles.score.
-            console.debug('updateModuleTask failed; skipping direct profile update for task6', e);
-          }
-        } catch (err) {
-          console.error('Error persisting task6 score after quiz completion:', err);
-        }
-        const completedCountNow = Object.values(updatedVP).filter(
-          (p) => (p as { isComplete: boolean }).isComplete
-        ).length;
-        const totalVideos = ADVANCED_MODULES.reduce((sum, module) => sum + module.videos.length, 0);
-        if (completedCountNow === totalVideos) {
-          setView('completed');
-        } else {
-          setView('videos');
-        }
-      } catch (err) {
-        console.error('Error fetching fresh video progress after quiz completion:', err);
-        // fallback to previous behavior: update local progress and move to videos view
-        setVideoProgress((prev) => ({
-          ...prev,
-          [videoId]: { watchedSeconds: prev[videoId]?.watchedSeconds || videoDuration, isComplete: true },
-        }));
-        setQuizScores((prev) => ({ ...prev, [videoId]: score }));
-        setView('videos');
-      }
-    },
-    [
-      currentModuleIndex,
-      currentVideoIndex,
-      videoDuration,
-      updateTaskCompletion,
-      updateVideoProgress,
-      videoProgress,
-      currentQuizQuestions,
-    ]
-  );
+  const handleQuizComplete = async (score: number) => {
+    if (saveInFlight.current) throw new Error('Your score is already being saved.');
+    const module = ADVANCED_MODULES[currentModuleIndex];
+    const video = module.videos[currentVideoIndex];
+    saveInFlight.current = true;
+    setIsSaving(true);
+    setSaveError('');
+    try {
+      // Save the quiz before marking the video complete. A failed score save
+      // must leave the quiz available for retry.
+      await updateModuleTask(getRpcModuleName(module.id), currentVideoIndex + 1, true, score);
+      await updateVideoProgress(video.id, videoProgress[video.id]?.watchedSeconds || videoDuration, true);
+      const progress = await getVideoProgress(currentUser!.id);
+      const updatedProgress: VideoProgress = {
+        ...progress,
+        [video.id]: { watchedSeconds: videoProgress[video.id]?.watchedSeconds || videoDuration, isComplete: true },
+      };
+      setVideoProgress(updatedProgress);
+      const updatedQuizzes = { ...completedQuizzes, [`${getRpcModuleName(module.id)}:${currentVideoIndex + 1}`]: true };
+      setCompletedQuizzes(updatedQuizzes);
+      setStartedQuiz(false);
+      const allComplete = ADVANCED_MODULES.every(item =>
+        item.videos.every((_, index) => updatedQuizzes[`${getRpcModuleName(item.id)}:${index + 1}`]));
+      setView(allComplete ? 'completed' : 'videos');
+    } finally {
+      saveInFlight.current = false;
+      setIsSaving(false);
+    }
+  };
 
   const handleBack = () => {
     if (view === "modules" || view === "completed" || view === "instructions") {
@@ -500,128 +375,14 @@ const VideoTask: React.FC = () => {
     }
   };
   const confirmBack = async () => {
-    setShowBackWarning(false);
-    
-    const currentModule = ADVANCED_MODULES[currentModuleIndex];
-    const currentVideo = currentModule.videos[currentVideoIndex];
-    const videoId = currentVideo.id;
-    const questionsPerVideo = QUESTIONS_PER_VIDEO; // Assuming 7 questions per video
-
-    // 1. Save the current video's score locally
-    setQuizScores((prevScores) => ({ ...prevScores, [videoId]: currentQuizScore }));
-
-    // 2. Mark the video as complete and update progress (assuming they completed the video before the quiz)
-    // We use videoDuration here to ensure completion is marked even if the interval didn't run last
-    updateVideoProgress(
-      videoId,
-      videoProgress[videoId]?.watchedSeconds || videoDuration,
-      true
-    );
-    
-    // Update local video progress state
-    setVideoProgress((prev) => ({
-      ...prev,
-      [videoId]: {
-        watchedSeconds: prev[videoId]?.watchedSeconds || videoDuration,
-        isComplete: true,
-      },
-    }));
-
-    // 3. Compute and persist the new total task score
-    // Compute updated per-video scores map and persist a single authoritative
-    // total score. This avoids fetching the stored score and adding to it,
-    // which could double-count if other updates are inflight.
+    if (isSaving) return;
     try {
-      const updatedScores = { ...(quizScores || {}), [videoId]: currentQuizScore };
-      setQuizScores(updatedScores);
-
-      const allVideoIds = ADVANCED_MODULES.flatMap((m) => m.videos.map((v) => v.id));
-      const completedCount = allVideoIds.filter((id) => id === videoId || videoProgress[id]?.isComplete).length;
-      const completedSteps = completedCount * questionsPerVideo;
-      const totalScore = Object.values(updatedScores).reduce((sum: number, s: number) => sum + (s || 0), 0);
-
-      console.debug('confirmBack: persisting task6', { videoId, currentQuizScore, totalScore, completedSteps });
-      try {
-        const moduleId = currentModule?.id || '';
-        const moduleName = getRpcModuleName(moduleId);
-        console.debug('confirmBack calling updateModuleTask', { moduleId, moduleName, videoIndex: currentVideoIndex, currentQuizScore, userId: currentUser?.id });
-        if (moduleName && typeof updateModuleTask === 'function') {
-          try {
-            const res = await updateModuleTask(moduleName, currentVideoIndex + 1, true, currentQuizScore);
-            console.debug('confirmBack updateModuleTask returned', { res });
-              // After persisting module progress, update the task6 per-task row
-              // so the EventCard progress (tasks.completedSteps) refreshes.
-              try {
-                if (currentUser) {
-                  try { if (typeof (fetchUserTasks) === 'function') await fetchUserTasks(currentUser.id); } catch(e) { console.debug('confirmBack fetchUserTasks failed', e); }
-                  try { if (typeof (setTaskCompletedSteps) === 'function') setTaskCompletedSteps('task6', completedSteps); } catch(e) { console.debug('confirmBack setTaskCompletedSteps failed', e); }
-                }
-              } catch (e) {
-                console.debug('confirmBack: failed to fetchUserTasks after module RPC (non-fatal)', e);
-              }
-          } catch (e) {
-            console.debug('updateModuleTask failed (non-fatal)', e);
-          }
-        }
-
-        // Build an authoritative snapshot of video progress including this video as complete
-        const updatedVP = { ...(videoProgress || {}), [videoId]: { watchedSeconds: videoProgress[videoId]?.watchedSeconds || videoDuration, isComplete: true } };
-        const completedVideos = Object.values(updatedVP).filter((p: any) => p.isComplete).length;
-        const completedStepsNow = completedVideos * questionsPerVideo;
-
-        try {
-          // We persist module table via updateModuleTask above.
-          // Do NOT call updateTaskCompletion for task6 here; profiles are recomputed by DB triggers.
-          console.debug('confirmBack: updateModuleTask persisted; skipping updateTaskCompletion for task6');
-        } catch (e) {
-          console.debug('confirmBack: skipping updateTaskCompletion for task6 due to error', e);
-        }
-      } catch (e) {
-        console.error('Error calling updateModuleTask RPC on back:', e);
-        // Do not call updateTaskCompletion for task6; rely on module triggers to recompute profiles.
-        console.debug('confirmBack: failed to call updateModuleTask; not updating profiles directly for task6');
-      }
-    } catch (err) {
-      console.error('Error computing/persisting new task score on back:', err);
+      await handleQuizComplete(currentQuizScore);
+      setShowBackWarning(false);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Your score could not be saved. Please try again.');
     }
-
-    // Go back to the videos list view
-    setView("videos");
-  };
-
-  // const confirmBack = () => {
-  //   setShowBackWarning(false);
-  //   // Mark as completed with current score for this video, and update total
-  //   const currentModule = ADVANCED_MODULES[currentModuleIndex];
-  //   const currentVideo = currentModule.videos[currentVideoIndex];
-  //   const videoId = currentVideo.id;
-  //   const maxQuizScore =
-  //     currentQuizQuestions.length >=0 ? currentQuizQuestions.length : 7;
-  //   // Update per-video quiz score
-  //   setQuizScores((prev) => {
-  //     const updated = { ...prev, [videoId]: currentQuizScore };
-  //     // Calculate per-module completion and score
-  //     let totalScore = 0;
-  //     let completedSteps = 0;
-  //     ADVANCED_MODULES.forEach((module) => {
-  //       const moduleVideoIds = module.videos.map((v) => v.id);
-  //       const moduleCompleted = moduleVideoIds.every(
-  //         (id) => videoProgress[id]?.isComplete
-  //       );
-  //       if (moduleCompleted) {
-  //         // Sum scores for this module
-  //         const moduleScore = moduleVideoIds.reduce(
-  //           (sum, id) => sum + (updated[id]||0 ),0
-  //         );
-  //         totalScore += moduleScore;
-  //         completedSteps += module.videos.length;
-  //       }
-  //     });
-  //     updateTaskCompletion("task6", completedSteps, totalScore);
-  //     return updated;
-  //   });
-  //   setView("videos");
-  // };
+  };
 
   const cancelBack = () => {
     setShowBackWarning(false);
@@ -642,6 +403,9 @@ const VideoTask: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 pt-16 pb-16 animate-fade-in">
+      {loadError && <div role="alert" className="mb-4 text-red-700">
+        {loadError} <button onClick={() => setProgressLoadVersion(version => version + 1)} className="underline">{t('retry_load')}</button>
+      </div>}
       <button
         data-kn-skip
         onClick={handleBack}
@@ -658,11 +422,12 @@ const VideoTask: React.FC = () => {
             <p className="text-gray-700 mb-4">
               {t('warning_text_prefix')} <strong>{currentQuizScore} {t('score')}</strong> {t('warning_text_suffix')}
             </p>
+            {saveError && <p role="alert" className="mb-4 text-red-700">{saveError}</p>}
             <div className="flex gap-4 justify-end">
               <button onClick={cancelBack} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors">
                 {t('cancel')}
               </button>
-              <button onClick={confirmBack} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+              <button onClick={confirmBack} disabled={isSaving} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
                 {t('Yes Go Back')}
               </button>
             </div>
@@ -710,14 +475,14 @@ const VideoTask: React.FC = () => {
           {ADVANCED_MODULES.map((module, index) => {
             const moduleVideos = module.videos;
             const completedVideos = moduleVideos.filter(
-              (video) => videoProgress[video.id]?.isComplete
+              (_, index) => completedQuizzes[`${getRpcModuleName(module.id)}:${index + 1}`]
             ).length;
             const isModuleComplete = completedVideos === moduleVideos.length;
             return (
               <button
                 key={module.id}
                 onClick={() => selectModule(index)}
-                disabled={isModuleComplete}
+                disabled={isModuleComplete || isLoadingProgress || Boolean(loadError)}
                 className="w-full p-4 bg-white border border-gray-200 rounded-lg shadow-md flex justify-between items-center text-left disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-100/50 transition-colors"
               >
                 <div className="flex items-center">
@@ -769,12 +534,12 @@ const VideoTask: React.FC = () => {
         <div className="space-y-4">
           {currentModule?.videos.map((video, index) => {
             const progress = videoProgress[video.id];
-            const isComplete = progress?.isComplete;
+            const isComplete = completedQuizzes[`${getRpcModuleName(currentModule.id)}:${index + 1}`];
             return (
               <button
                 key={video.id}
                 onClick={() => selectVideo(index)}
-                disabled={isComplete}
+                disabled={isComplete || isLoadingProgress || Boolean(loadError)}
                 className="w-full p-4 bg-white border border-gray-200 rounded-lg shadow-md flex justify-between items-center text-left disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-100/50 transition-colors"
               >
                 <div className="flex items-center">
@@ -899,7 +664,7 @@ const VideoTask: React.FC = () => {
         //         onClick={confirmBack}
         //         className="flex-1 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors"
         //       >
-        //         {t("Yes Go Back")}
+        //         {isSaving ? t("saving_score") : t("Yes Go Back")}
         //       </button>
         //     </div>
         //   </div>

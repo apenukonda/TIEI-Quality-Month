@@ -59,8 +59,8 @@ export interface User {
   id: string; // This will be the Supabase auth UUID
   userId: string;
   name: string;
-  department: Department;
-  designation: Designation;
+  department: string;
+  designation: string;
   score: number;
   email?: string;
   // role stored in profiles table (e.g. 'user' or 'admin')
