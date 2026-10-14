@@ -631,7 +631,7 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Top section with header and welcome */}
-      <div className="pt-8 px-8">
+      <div className="pt-6 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
           <p className="text-sm text-gray-500">Welcome to your dashboard</p>
@@ -719,7 +719,7 @@ const AdminDashboard: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Registration Targets
             </h3>
-            <div className="h-80 flex flex-col items-center justify-start -mt-2">
+            <div className="relative h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   {(() => {
@@ -753,14 +753,14 @@ const AdminDashboard: React.FC = () => {
                   <Tooltip formatter={(value: any) => [value, "users"]} />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="-mt-52 text-center">
+              <div className="pointer-events-none absolute left-1/2 top-[45%] -translate-x-1/2 -translate-y-1/2 text-center">
                 <div className="text-lg font-semibold text-gray-900">
                   {totalUsers ?? "—"}
                 </div>
                 <div className="text-xs text-gray-500">Registered</div>
               </div>
             </div>
-            <div className="mt-4 flex items-center justify-center space-x-4 text-sm">
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
               <div className="flex items-center space-x-2">
                 <span className="w-3 h-3 inline-block bg-[#dbeafe] rounded-sm" />
                 <span className="text-gray-600">Registered</span>

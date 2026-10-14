@@ -77,7 +77,7 @@ const Content: React.FC<ContentProps> = ({ themeLogoSrc, onGetStarted }) => {
     <img
       src="/company-logo.png"
       alt="Company Logo"
-      className="w-30 h-20 m-0 object-contain order-1"
+      className="w-32 h-20 m-0 object-contain order-1"
     />
     <img
       src={themeLogoSrc}

@@ -39,7 +39,7 @@ const Dashboard: React.FC = () => {
             ? "ಅಂಕಗಳನ್ನು ಗಳಿಸಲು ಮತ್ತು ಸ್ಪರ್ಧಿಸಲು ಎಲ್ಲಾ ಮಾದರಿಗಳನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ!."
             : "Complete the modules below to earn your points and compete."}
         </p>
-        <div className="mt-6 flex justify-center items-center gap-4">
+        <div className="mt-6 flex flex-wrap justify-center items-center gap-4">
           <button
             onClick={() => setCurrentPage(Page.TOP_PERFORMERS)}
             className="px-6 py-2 bg-red-600 text-white font-semibold rounded-full transform hover:scale-105 transition-transform duration-200 ease-in-out shadow-md"

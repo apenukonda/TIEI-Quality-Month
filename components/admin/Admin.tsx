@@ -144,7 +144,12 @@ const Admin: React.FC = () => {
   );
   const [departmentFilter, setDepartmentFilter] = useState<string>("All");
   const [designationFilter, setDesignationFilter] = useState<string>("All");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(
+    () => typeof window === "undefined" || window.innerWidth >= 1024
+  );
+  const closeSidebarOnMobile = () => {
+    if (window.innerWidth < 1024) setIsSidebarOpen(false);
+  };
   // console.log("View:", selectedView, "Analytics:", selectedAnalytics);
 
   // Profiles
@@ -1332,18 +1337,27 @@ const Admin: React.FC = () => {
   }, [suggestionRows, suggestionDeptFilter, suggestionDesigFilter]);
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen min-w-0 bg-gray-50">
+      {isSidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation menu"
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 z-30 lg:hidden"
+        />
+      )}
       {/* Sidebar */}
       <div
         className={`${
-          isSidebarOpen ? "w-64" : "w-0"
-        } transition-all duration-300 bg-white shadow-lg overflow-hidden flex flex-col`}
+          isSidebarOpen ? "translate-x-0 lg:w-64" : "-translate-x-full lg:w-0"
+        } fixed inset-y-0 left-0 z-40 w-64 transform transition-all duration-300 bg-white shadow-lg overflow-hidden flex flex-col lg:relative lg:inset-auto lg:z-auto lg:translate-x-0`}
       >
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-xl font-bold text-gray-800">ADMINS</h1>
             <button
               onClick={() => setIsSidebarOpen(false)}
+              aria-label="Close navigation menu"
               className="lg:hidden p-1 hover:bg-gray-100 rounded"
             >
               <X size={20} />
@@ -1366,105 +1380,112 @@ const Admin: React.FC = () => {
             onClick={() => {
               setSelectedView("dashboard");
               setSelectedAnalytics("none");
+              closeSidebarOnMobile();
             }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+            className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg mb-2 transition-colors ${
               selectedView === "dashboard" && selectedAnalytics === "none"
                 ? "bg-red-500 text-white"
                 : "text-gray-700 hover:bg-gray-100"
             }`}
           >
             <LayoutDashboard size={22} />
-            <span className="font-medium">Dashboard</span>
+            <span className="min-w-0 flex-1 text-left font-medium">Dashboard</span>
           </button>
 
           <button
             onClick={() => {
               setSelectedView("stats");
               setSelectedAnalytics("none");
+              closeSidebarOnMobile();
             }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+            className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg mb-2 transition-colors ${
               selectedView === "stats" && selectedAnalytics === "none"
                 ? "bg-red-500 text-white"
                 : "text-gray-700 hover:bg-gray-100"
             }`}
           >
             <BarChart3 size={20} />
-            <span className="font-medium">Registration Status</span>
+            <span className="min-w-0 flex-1 text-left font-medium">Registration Status</span>
           </button>
 
           <button
             onClick={async () => {
               setSelectedAnalytics("mdMessage");
+              closeSidebarOnMobile();
               await fetchMDCompletions();
             }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+            className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg mb-2 transition-colors ${
               selectedAnalytics === "mdMessage"
                 ? "bg-red-500 text-white"
                 : "text-gray-700 hover:bg-gray-100"
             }`}
           >
             <FileText size={20} />
-            <span className="font-medium">MD Message Completion</span>
+            <span className="min-w-0 flex-1 text-left font-medium">MD Message Completion</span>
           </button>
 
           <button
             onClick={async () => {
               setSelectedAnalytics("videoCompletion");
+              closeSidebarOnMobile();
               await fetchVideoCompletions();
             }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+            className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg mb-2 transition-colors ${
               selectedAnalytics === "videoCompletion"
                 ? "bg-red-500 text-white"
                 : "text-gray-700 hover:bg-gray-100"
             }`}
           >
             <Video size={20} />
-            <span className="font-medium">Video Completion</span>
+            <span className="min-w-0 flex-1 text-left font-medium">Video Completion</span>
           </button>
 
           <button
             onClick={async () => {
               setSelectedAnalytics("cartoon");
+              closeSidebarOnMobile();
               await fetchImageSubmissions();
             }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+            className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg mb-2 transition-colors ${
               selectedAnalytics === "cartoon"
                 ? "bg-red-500 text-white"
                 : "text-gray-700 hover:bg-gray-100"
             }`}
           >
             <FileText size={20} />
-            <span className="font-medium">Cartoon Submission Analytics</span>
+            <span className="min-w-0 flex-1 text-left font-medium">Cartoon Submission Analytics</span>
           </button>
 
           <button
             onClick={async () => {
               setSelectedAnalytics("slogan");
+              closeSidebarOnMobile();
               await fetchSlogans();
             }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+            className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg mb-2 transition-colors ${
               selectedAnalytics === "slogan"
                 ? "bg-red-500 text-white"
                 : "text-gray-700 hover:bg-gray-100"
             }`}
           >
             <FileText size={20} />
-            <span className="font-medium">Slogan Competition Analytics</span>
+            <span className="min-w-0 flex-1 text-left font-medium">Slogan Competition Analytics</span>
           </button>
 
           <button
             onClick={async () => {
               setSelectedAnalytics("suggestion");
+              closeSidebarOnMobile();
               await fetchSuggestionSubmissions();
             }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+            className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg mb-2 transition-colors ${
               selectedAnalytics === "suggestion"
                 ? "bg-red-500 text-white"
                 : "text-gray-700 hover:bg-gray-100"
             }`}
           >
             <FileText size={20} />
-            <span className="font-medium">Suggestion Submission Analytics</span>
+            <span className="min-w-0 flex-1 text-left font-medium">Suggestion Submission Analytics</span>
           </button>
         </div>
 
@@ -1491,11 +1512,12 @@ const Admin: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="bg-white shadow-sm p-4 flex items-center gap-4 border-b border-gray-200">
+      <div className="flex min-w-0 min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="bg-white shadow-sm p-4 flex items-center gap-4 border-b border-gray-200 shrink-0">
           {!isSidebarOpen && (
             <button
               onClick={() => setIsSidebarOpen(true)}
+              aria-label="Open navigation menu"
               className="p-2 hover:bg-gray-100 rounded-lg"
             >
               <Menu size={24} className="text-gray-700" />
@@ -1503,7 +1525,7 @@ const Admin: React.FC = () => {
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="max-w-full mx-auto">
             {selectedView === "dashboard" && selectedAnalytics === "none" ? (
               <AdminDashboard />
