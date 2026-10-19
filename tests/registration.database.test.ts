@@ -114,4 +114,46 @@ describe('employee registration rules', () => {
     expect((await db.query('select name,score,role from public.profiles where id=$1', [userId])).rows)
       .toEqual([{ name: 'Existing', score: 15, role: 'admin' }]);
   });
+  it('cleans up an orphan Auth account when no profile exists and employee matches roster', async () => {
+    await db.exec('drop trigger on_auth_user_created on auth.users;');
+    await db.exec('set role supabase_auth_admin;');
+    await signup({ userId: '00001', department: 'INFORMATION SYSTEMS' });
+    await db.exec('reset role;');
+
+    expect((await db.query('select count(*)::integer as total from auth.users')).rows).toEqual([{ total: 1 }]);
+    expect((await db.query('select count(*)::integer as total from public.profiles')).rows).toEqual([{ total: 0 }]);
+
+    const res = await db.query<{ cleaned: boolean }>(
+      'select public.cleanup_orphan_user($1, $2) as cleaned',
+      ['00001', 'INFORMATION SYSTEMS']
+    );
+    expect(res.rows[0].cleaned).toBe(true);
+    expect((await db.query('select count(*)::integer as total from auth.users')).rows).toEqual([{ total: 0 }]);
+
+    await db.exec(`create trigger on_auth_user_created
+      after insert on auth.users
+      for each row execute function public.handle_new_user();`);
+  });
+  it('refuses to delete an Auth account if a profile already exists', async () => {
+    await signup({ userId: '00001', department: 'INFORMATION SYSTEMS' });
+    expect((await db.query('select count(*)::integer as total from auth.users')).rows).toEqual([{ total: 1 }]);
+    expect((await db.query('select count(*)::integer as total from public.profiles')).rows).toEqual([{ total: 1 }]);
+
+    const res = await db.query<{ cleaned: boolean }>(
+      'select public.cleanup_orphan_user($1, $2) as cleaned',
+      ['00001', 'INFORMATION SYSTEMS']
+    );
+    expect(res.rows[0].cleaned).toBe(false);
+    expect((await db.query('select count(*)::integer as total from auth.users')).rows).toEqual([{ total: 1 }]);
+  });
+  it('cascades deletion from public.profiles to auth.users via on_profile_deleted', async () => {
+    await signup({ userId: '00001', department: 'INFORMATION SYSTEMS' });
+    expect((await db.query('select count(*)::integer as total from auth.users')).rows).toEqual([{ total: 1 }]);
+    expect((await db.query('select count(*)::integer as total from public.profiles')).rows).toEqual([{ total: 1 }]);
+
+    await db.query('delete from public.profiles where user_id = $1', ['00001']);
+    expect((await db.query('select count(*)::integer as total from public.profiles')).rows).toEqual([{ total: 0 }]);
+    expect((await db.query('select count(*)::integer as total from auth.users')).rows).toEqual([{ total: 0 }]);
+  });
 });
+
