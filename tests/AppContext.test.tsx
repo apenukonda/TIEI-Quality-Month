@@ -118,4 +118,25 @@ describe('score state and restored progress', () => {
     expect(result.error).toContain('could not be verified');
     expect(backend.signUp).not.toHaveBeenCalled();
   });
+
+  it('cleans up an orphan Auth account and retries signup when user already exists in Auth but has no profile', async () => {
+    await mount();
+    // 1. Roster verification succeeds
+    backend.rpc.mockResolvedValueOnce({ data: true, error: null });
+    // 2. First signUp fails with already registered
+    backend.signUp.mockResolvedValueOnce({ data: {}, error: { message: 'User already registered' } });
+    // 3. cleanup_orphan_user RPC succeeds
+    backend.rpc.mockResolvedValueOnce({ data: true, error: null });
+    // 4. Retry signUp succeeds
+    backend.signUp.mockResolvedValueOnce({ data: { user: { id: 'new-user' } }, error: null });
+
+    const result = await context.signup({ userId: '00468', department: 'SCM projects', passcode: '1234' });
+    expect(backend.rpc).toHaveBeenCalledWith('cleanup_orphan_user', {
+      p_employee_number: '00468',
+      p_department: 'SCM projects',
+    });
+    expect(backend.signUp).toHaveBeenCalledTimes(2);
+    expect(result.success).toBe(true);
+  });
 });
+

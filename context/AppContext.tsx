@@ -515,7 +515,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const password = mapPasscodeToPassword(passcode);
     const hashedPasscode = bcrypt.hashSync(passcode, bcrypt.genSaltSync(10));
     // Auth validates the pair again and fills name/designation from the roster.
-    const { data, error } = await supabaseClient.auth.signUp({
+    let { data, error } = await supabaseClient.auth.signUp({
       email,
       password,
       options: { data: { userId: trimmedUserId, department: department.trim(), passcode: hashedPasscode } },
@@ -537,9 +537,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
       }
       if (em.includes('already registered') || em.includes('already exists') || em.includes('user already')) {
-        return { success: false, error: 'User already registered. Try logging in or use a different Employee ID.' };
+        // Attempt to clean up orphan auth account (user in auth.users without a profile) and retry
+        try {
+          const { data: cleanedUp } = await supabaseClient.rpc('cleanup_orphan_user', {
+            p_employee_number: trimmedUserId,
+            p_department: department.trim(),
+          });
+          if (cleanedUp) {
+            const retryRes = await supabaseClient.auth.signUp({
+              email,
+              password,
+              options: { data: { userId: trimmedUserId, department: department.trim(), passcode: hashedPasscode } },
+            });
+            data = retryRes.data;
+            error = retryRes.error;
+          }
+        } catch (cleanupErr) {
+          console.debug('cleanup_orphan_user attempt failed:', cleanupErr);
+        }
+
+        if (error) {
+          return { success: false, error: 'User already registered. Try logging in or use a different Employee ID.' };
+        }
+      } else {
+        return { success: false, error: error.message };
       }
-      return { success: false, error: error.message };
     }
     if (!data.user) return { success: false, error: "Signup failed. Please try again." };
 
