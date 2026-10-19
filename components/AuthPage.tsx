@@ -85,10 +85,9 @@ const AuthPage: React.FC = () => {
   }, [isLogin, getRegistrationDepartments, departmentLoadVersion]);
 
   const validateUserId = (id: string): string | null => {
-    // Employee ID must be digits only and exactly 5 digits
     const sanitizedId = id.replace(/\D/g, "");
-    if (sanitizedId.length !== 5) {
-      return "Employee ID must be exactly 5 digits.";
+    if (sanitizedId.length < 1 || sanitizedId.length > 6) {
+      return "Employee ID must be 1 to 6 digits.";
     }
     return null;
   };
@@ -98,10 +97,9 @@ const AuthPage: React.FC = () => {
     setLoading(true);
     setError("");
     setDepartmentError("");
-    // Validate userId must be exactly 5 digits
-    const sanitizedUserId = userId.replace(/\D/g, "");
-    if (sanitizedUserId.length !== 5) {
-      setError("Employee ID must be exactly 5 digits.");
+    const userIdValidationError = validateUserId(userId);
+    if (userIdValidationError) {
+      setError(userIdValidationError);
       setLoading(false);
       return;
     }
@@ -284,15 +282,14 @@ const AuthPage: React.FC = () => {
               <input
                 type="text"
                 inputMode="numeric"
-                pattern="[0-9]{5}"
-                maxLength={5}
-                placeholder="Enter 5 digit id"
+                pattern="[0-9]{1,6}"
+                maxLength={6}
+                placeholder="Enter employee ID"
                 value={userId}
                 onChange={(e) => {
-                  // Allow only digits and limit to 5 characters for login
                   const sanitized = e.target.value
                     .replace(/\D/g, "")
-                    .slice(0, 5);
+                    .slice(0, 6);
                   setUserId(sanitized);
                   setError("");
                 }}
@@ -417,16 +414,15 @@ const AuthPage: React.FC = () => {
               <input
                 type="text"
                 inputMode="numeric"
-                pattern="[0-9]{5}"
-                maxLength={5}
-                placeholder="Please enter your 5 digit employee id"
+                pattern="[0-9]{1,6}"
+                maxLength={6}
+                placeholder="Please enter your employee ID"
                 value={newUserId}
                 aria-label="Employee ID"
                 onChange={(e) => {
-                  // Allow only digits and limit length to 5
                   const sanitized = e.target.value
                     .replace(/\D/g, "")
-                    .slice(0, 5);
+                    .slice(0, 6);
                   setNewUserId(sanitized);
                 }}
                 className={inputClass}

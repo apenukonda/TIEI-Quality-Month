@@ -18,6 +18,12 @@ New accounts always receive the `user` role. Existing accounts and scores are
 unchanged. Matching ignores case and excess whitespace in department names;
 employee numbers retain leading zeros and are otherwise matched exactly.
 
+Reapplying `employee_registration.sql` also repairs missing profiles for existing
+Auth accounts when their synthetic email, Employee ID metadata, and Department
+metadata all match the trusted roster. Existing profiles are left untouched.
+This allows an account that previously reached Auth without a profile to log in
+after the SQL script is reapplied.
+
 Clients cannot read or modify the roster. The two public registration RPCs return
 only a boolean match and department names. Their intentionally anonymous execution
 supports signup before login. The Auth trigger is in the private schema and is not

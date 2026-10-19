@@ -10,7 +10,7 @@ beforeAll(async () => {
     create role anon; create role authenticated; create role service_role;
     create role supabase_auth_admin;
     create schema auth;
-    create table auth.users (id uuid primary key, raw_user_meta_data jsonb default '{}');
+    create table auth.users (id uuid primary key, email text unique, raw_user_meta_data jsonb default '{}');
     create function auth.uid() returns uuid language sql stable as
       $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     grant usage on schema auth to supabase_auth_admin;
@@ -36,7 +36,9 @@ async function matches(number: string | null, department: string | null) {
   return result.rows[0].allowed;
 }
 async function signup(metadata: Record<string, unknown>) {
-  await db.query('insert into auth.users(id,raw_user_meta_data) values ($1,$2::jsonb)', [userId, JSON.stringify(metadata)]);
+  const employeeNumber = typeof metadata.userId === 'string' ? metadata.userId.trim() : null;
+  const email = employeeNumber ? `${employeeNumber}@quality-event.internal` : null;
+  await db.query('insert into auth.users(id,email,raw_user_meta_data) values ($1,$2,$3::jsonb)', [userId, email, JSON.stringify(metadata)]);
 }
 
 describe('employee registration rules', () => {
@@ -81,6 +83,29 @@ describe('employee registration rules', () => {
     await db.exec('reset role;');
     const profile = await db.query('select user_id,name,department,designation,role,score from public.profiles where id=$1', [userId]);
     expect(profile.rows).toEqual([{ user_id: '00001', name: 'Test Employee A', department: 'INFORMATION SYSTEMS', designation: 'ENGINEER', role: 'user', score: 0 }]);
+  });
+  it('repairs a missing profile for an existing Auth account with matching roster metadata', async () => {
+    await db.exec('drop trigger on_auth_user_created on auth.users;');
+    await db.exec('set role supabase_auth_admin;');
+    await signup({ userId: '00001', department: ' information systems ', passcode: 'hashed-passcode' });
+    await db.exec('reset role;');
+    expect((await db.query('select count(*)::integer as total from public.profiles where id=$1', [userId])).rows)
+      .toEqual([{ total: 0 }]);
+
+    await db.exec(readFileSync(new URL('../employee_registration.sql', import.meta.url), 'utf8'));
+
+    const profile = await db.query('select user_id,name,department,designation,role,passcode from public.profiles where id=$1', [userId]);
+    expect(profile.rows).toEqual([{
+      user_id: '00001',
+      name: 'Test Employee A',
+      department: 'INFORMATION SYSTEMS',
+      designation: 'ENGINEER',
+      role: 'user',
+      passcode: 'hashed-passcode',
+    }]);
+    await db.exec(`create trigger on_auth_user_created
+      after insert on auth.users
+      for each row execute function public.handle_new_user();`);
   });
   it('does not alter existing profiles when installing the registration rule', async () => {
     await signup({ userId: '00001', department: 'INFORMATION SYSTEMS' });

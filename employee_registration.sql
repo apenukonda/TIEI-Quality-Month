@@ -102,4 +102,25 @@ create trigger validate_employee_registration
   before insert on auth.users
   for each row execute function private.enforce_employee_registration();
 
+-- Repair accounts created before employee profiles were available. This is
+-- idempotent and only creates profiles when Auth metadata matches the roster.
+insert into public.profiles (id, user_id, name, department, designation, role, passcode)
+select
+  u.id,
+  e.employee_number,
+  e.employee_name,
+  btrim(e.department),
+  e.designation,
+  'user',
+  u.raw_user_meta_data->>'passcode'
+from auth.users u
+join public.employee_registry e
+  on e.employee_number = btrim(u.raw_user_meta_data->>'userId')
+ and e.department_key = lower(btrim(regexp_replace(
+   coalesce(u.raw_user_meta_data->>'department', ''),
+   '[[:space:]]+', ' ', 'g'
+ )))
+where u.email = e.employee_number || '@quality-event.internal'
+on conflict (id) do nothing;
+
 commit;

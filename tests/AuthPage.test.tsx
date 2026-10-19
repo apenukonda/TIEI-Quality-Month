@@ -23,7 +23,7 @@ describe('employee signup form', () => {
     expect(screen.queryByText('Designation')).toBeNull();
 
     // Verify placeholders
-    expect(screen.getByPlaceholderText('Please enter your 5 digit employee id')).toBeDefined();
+    expect(screen.getByPlaceholderText('Please enter your employee ID')).toBeDefined();
     expect(screen.getByPlaceholderText('Enter 4-digit passcode')).toBeDefined();
     expect(screen.getByPlaceholderText('Re-enter your passcode')).toBeDefined();
 
@@ -47,17 +47,29 @@ describe('employee signup form', () => {
     await waitFor(() => expect((screen.getByRole('button', { name: 'Create Account' }) as HTMLButtonElement).disabled).toBe(false));
   });
 
-  it('validates strictly 5-digit employee ID on signup', async () => {
+  it('requires an employee ID on signup', async () => {
     const { signup } = mount();
     await screen.findByRole('option', { name: 'TNGA - HEAD' });
-    fireEvent.change(screen.getByRole('textbox', { name: 'Employee ID' }), { target: { value: '1234' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Employee ID' }), { target: { value: '' } });
     fireEvent.change(screen.getByRole('combobox', { name: 'Department' }), { target: { value: 'TNGA - HEAD' } });
     fireEvent.change(screen.getByLabelText('Passcode', { exact: true }), { target: { value: '1234' } });
     fireEvent.change(screen.getByLabelText('Confirm Passcode'), { target: { value: '1234' } });
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.submit(screen.getByRole('button', { name: 'Create Account' }).closest('form')!);
-    expect(await screen.findByText('Employee ID must be exactly 5 digits.')).toBeDefined();
+    expect(await screen.findByText('Employee ID must be 1 to 6 digits.')).toBeDefined();
     expect(signup).not.toHaveBeenCalled();
+  });
+
+  it('allows a 6-digit employee ID to reach registration verification', async () => {
+    const { signup } = mount();
+    await screen.findByRole('option', { name: 'TNGA - HEAD' });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Employee ID' }), { target: { value: '123456' } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Department' }), { target: { value: 'TNGA - HEAD' } });
+    fireEvent.change(screen.getByLabelText('Passcode', { exact: true }), { target: { value: '1234' } });
+    fireEvent.change(screen.getByLabelText('Confirm Passcode'), { target: { value: '1234' } });
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: 'Create Account' }));
+    await waitFor(() => expect(signup).toHaveBeenCalledWith({ userId: '123456', department: 'TNGA - HEAD', passcode: '1234' }));
   });
 
   it('requires agreement checkbox before registration', async () => {
@@ -75,19 +87,18 @@ describe('employee signup form', () => {
 });
 
 describe('employee login form', () => {
-  it('displays correct placeholders and enforces 5-digit ID requirement', async () => {
-    const login = vi.fn().mockResolvedValue({ success: true });
+  it('accepts a 6-digit ID when logging in', async () => {
+    const login = vi.fn().mockResolvedValue({ success: false, error: 'Invalid credentials' });
     const value = { currentPage: Page.LOGIN, currentUser: null, setCurrentPage: vi.fn(), login, getRegistrationDepartments: vi.fn() } as any;
     render(<AppContext.Provider value={value}><AuthPage /></AppContext.Provider>);
 
-    expect(screen.getByPlaceholderText('Enter 5 digit id')).toBeDefined();
+    expect(screen.getByPlaceholderText('Enter employee ID')).toBeDefined();
     expect(screen.getByPlaceholderText('Enter 4-digit passcode')).toBeDefined();
 
-    fireEvent.change(screen.getByPlaceholderText('Enter 5 digit id'), { target: { value: '1234' } });
+    fireEvent.change(screen.getByPlaceholderText('Enter employee ID'), { target: { value: '123456' } });
     fireEvent.change(screen.getByPlaceholderText('Enter 4-digit passcode'), { target: { value: '1234' } });
     fireEvent.submit(screen.getByRole('button', { name: 'Login' }).closest('form')!);
 
-    expect(await screen.findByText('Employee ID must be exactly 5 digits.')).toBeDefined();
-    expect(login).not.toHaveBeenCalled();
+    await waitFor(() => expect(login).toHaveBeenCalledWith('123456', '1234', 'user'));
   });
 });
