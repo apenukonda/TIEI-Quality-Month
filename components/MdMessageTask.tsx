@@ -8,7 +8,7 @@ import { MD_MESSAGE_QUIZ_KN } from '../constants_kn';
 import { ChevronLeftIcon, CheckIcon, XCircleIcon } from './icons';
 
 const MdMessageTask: React.FC = () => {
-  const { setCurrentPage, updateTaskCompletion, tasks, t, language } = useContext(AppContext);
+  const { setCurrentPage, updateTaskCompletion, tasks, t, language, currentUser } = useContext(AppContext);
   const [view, setView] = useState<'message' | 'instructions' | 'quiz' | 'completed'>('message');
   const [startedQuiz, setStartedQuiz] = useState(false);
   const [showBackWarning, setShowBackWarning] = useState(false);
@@ -20,6 +20,25 @@ const MdMessageTask: React.FC = () => {
   const [resultScore, setResultScore] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const mdQuizStorageKey = `quality-month-md-quiz:${currentUser?.id || 'anonymous'}`;
+
+  useEffect(() => {
+    try {
+      const raw = window.sessionStorage.getItem(mdQuizStorageKey);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { view?: string; indices?: number[]; score?: number };
+      if (Array.isArray(saved.indices) && saved.indices.length > 0) {
+        setQuizQuestionIndices(saved.indices);
+        setCurrentQuizScore(saved.score || 0);
+        if (saved.view === 'quiz') {
+          setView('quiz');
+          setStartedQuiz(true);
+        }
+      }
+    } catch {
+      window.sessionStorage.removeItem(mdQuizStorageKey);
+    }
+  }, []);
 
   useEffect(() => {
     const task = tasks.find(t => t.id === 'task1');
@@ -32,14 +51,20 @@ const MdMessageTask: React.FC = () => {
     if (view === 'quiz') {
       setStartedQuiz(true);
       // Keep the selected questions and their order when switching language.
-      setQuizQuestionIndices(Array.from({ length: MD_MESSAGE_QUIZ.length }, (_, index) => index)
-        .sort(() => Math.random() - 0.5).slice(0, 7));
+      setQuizQuestionIndices(previous => {
+        if (previous.length > 0) return previous;
+        const indices = Array.from({ length: MD_MESSAGE_QUIZ.length }, (_, index) => index)
+          .sort(() => Math.random() - 0.5).slice(0, 7);
+        window.sessionStorage.setItem(mdQuizStorageKey, JSON.stringify({ view: 'quiz', indices, score: currentQuizScore }));
+        return indices;
+      });
     }
     // eslint-disable-next-line
   }, [view]);
 
   const handleQuizComplete = async (score: number) => {
     await updateTaskCompletion('task1', 7, score);
+    window.sessionStorage.removeItem(mdQuizStorageKey);
     setStartedQuiz(false);
     setView('completed');
   };
@@ -115,7 +140,10 @@ const MdMessageTask: React.FC = () => {
       )}
 
   {view === 'quiz' && quizQuestions.length > 0 && (
-    <Quiz questions={quizQuestions} onComplete={handleQuizComplete} onScoreUpdate={setCurrentQuizScore} onShowResult={handleShowResult} />
+    <Quiz quizId="md-message" questions={quizQuestions} onComplete={handleQuizComplete} onScoreUpdate={(score) => {
+      setCurrentQuizScore(score);
+      window.sessionStorage.setItem(mdQuizStorageKey, JSON.stringify({ view: 'quiz', indices: quizQuestionIndices, score }));
+    }} onShowResult={handleShowResult} />
   )}
       
       {view === 'completed' && (
