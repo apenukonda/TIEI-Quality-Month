@@ -26,6 +26,10 @@ const EventCard: React.FC<EventCardProps> = ({ task }) => {
   const { setCurrentPage, t, language } = useContext(AppContext);
   const progress = (task.completedSteps / task.totalSteps) * 100;
   const isCompleted = progress === 100;
+  const iconNumber: Record<string, number> = {
+    task1: 1, task6: 2, task3: 3, task4: 4, task8: 5, task7: 6, task9: 7,
+  };
+  const [iconLoaded, setIconLoaded] = React.useState(false);
 
   return (
     <div
@@ -37,6 +41,15 @@ const EventCard: React.FC<EventCardProps> = ({ task }) => {
       }
     >
       <div>
+        <div className="relative mb-4 h-28 flex items-center justify-center">
+          {!iconLoaded && <div className="absolute h-10 w-10 animate-spin rounded-full border-4 border-red-200 border-t-red-600" aria-label="Loading competition image" />}
+          <img
+            src={`/${iconNumber[task.id]}.svg`}
+            alt=""
+            onLoad={() => setIconLoaded(true)}
+            className={`h-28 w-28 object-contain transition-opacity ${iconLoaded ? 'opacity-100' : 'opacity-0'}`}
+          />
+        </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <h3 className="text-xl font-bold text-gray-800 pr-2">
             {language === 'kn' ? (task.titleKn || task.title) : task.title}

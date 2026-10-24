@@ -9,16 +9,16 @@ import MdMessageTask from './components/MdMessageTask';
 import PlaceholderTask from './components/PlaceholderTask';
 import VideoTask from './components/VideoTask';
 import ImageSubmissionTask from './components/ImageSubmissionTask';
+import DummyCompetitionTask from './components/DummyCompetitionTask';
 import TopPerformers from './components/TopPerformers';
 import KnowledgeCentrePage from './components/KnowledgeCentrePage';
 import KnFontScaler from './components/KnFontScaler';
 import Admin from './components/admin/Admin';
-import KaizenSuggestionTask from './components/KaizenSuggestionTask';
 import logoImg from './assets/logo.png';
 
 const App: React.FC = () => {
   const { currentPage, theme, currentUser } = useContext(AppContext);
-  const { language } = useContext(AppContext);
+  const { language, t } = useContext(AppContext);
 
   // determine if the current render is the admin view so we can hide the global navbar
   const isAdminUser = currentUser && (currentUser.role === 'admin' || currentUser.role === 'ADMIN');
@@ -54,11 +54,13 @@ const App: React.FC = () => {
       case Page.VIDEO_TASK:
         return <VideoTask />;
     case Page.IMAGE_SUBMISSION:
-      return <ImageSubmissionTask />;
+      return <ImageSubmissionTask taskId="task3" title={t('Craft your Vision')} />;
+    case Page.QUALITY_COMICS:
+      return <ImageSubmissionTask taskId="task7" title={t('Quality comics')} showComicInstructions />;
     case Page.SLOGAN_WRITER:
       return <PlaceholderTask
           taskId="task4" 
-          title="Slogan Competition" 
+          title={t('Quality mantra')}
           instructions={[
             "The slogan should be related to Quality.",
             "Slogans are accepted in both Kannada and English.",
@@ -68,22 +70,10 @@ const App: React.FC = () => {
           ]}
           score={3}
          />;
-    case Page.SUGGESTION_BOX:
-      return <PlaceholderTask
-          taskId="task5"
-          title="Kaizen Suggestion"
-          instructions={[
-            "Click the “Open Microsoft Form” button to participate in the contest.",
-            "Once you click the link, you will be redirected to the Microsoft Form.",
-            "Read the instructions on the Microsoft Form carefully.",
-            "After submitting the Microsoft Form, click the “Mark as Complete” button to receive your completion score.",
-            "Once you click “Mark as Complete,” you will not be able to participate in the contest again.",
-            "Upon submission, 3 points will be added to your account for overall evaluation.",
-            "This category will also have a separate Top-3 special recognition.",
-            "If you have more than one suggestion for the Kaizen suggestion, they are also accepted. For this, please contact Mr. Ashwin – 8904799083, Quality Department."
-          ]}
-          score={3}
-         />;
+    case Page.BRAIN_BLITZ:
+      return <DummyCompetitionTask taskId="task8" title={t('Brain blitz')} />;
+    case Page.BEYOND_THE_BLUEPRINT:
+      return <DummyCompetitionTask taskId="task9" title={t('Beyond the blueprint')} />;
       case Page.HOME:
       default:
         return <HomePage />;

@@ -8,7 +8,13 @@ const Spinner: React.FC = () => (
     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
 );
 
-const ImageSubmissionTask: React.FC = () => {
+interface ImageSubmissionTaskProps {
+    taskId: string;
+    title: string;
+    showComicInstructions?: boolean;
+}
+
+const ImageSubmissionTask: React.FC<ImageSubmissionTaskProps> = ({ taskId, title, showComicInstructions = false }) => {
     const { setCurrentPage, updateTaskCompletion, getSubmission, submitImageUrl, currentUser, t, language } = useContext(AppContext);
     
     // --- IMPORTANT: CLOUDINARY SETUP ---
@@ -25,6 +31,9 @@ const ImageSubmissionTask: React.FC = () => {
     const [error, setError] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
     const [submittedImageUrl, setSubmittedImageUrl] = useState<string | null>(null);
+    const [showExample, setShowExample] = useState(false);
+    const [instructionLoaded, setInstructionLoaded] = useState(false);
+    const [exampleLoaded, setExampleLoaded] = useState(false);
 
     // Check if the credentials are still placeholders
     const isCloudinaryConfigured = CLOUD_NAME !== 'YOUR_CLOUD_NAME_HERE' && UPLOAD_PRESET !== 'YOUR_UNSIGNED_UPLOAD_PRESET_HERE';
@@ -35,7 +44,7 @@ const ImageSubmissionTask: React.FC = () => {
             return;
         }
         try {
-            const { data, error } = await getSubmission('task3');
+            const { data, error } = await getSubmission(taskId);
             if (error) {
                 console.error(error);
                 setError("Could not fetch previous submissions.");
@@ -48,7 +57,7 @@ const ImageSubmissionTask: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [currentUser, getSubmission]);
+    }, [currentUser, getSubmission, taskId]);
 
     useEffect(() => {
         fetchSubmission();
@@ -115,13 +124,13 @@ const ImageSubmissionTask: React.FC = () => {
             const imageUrl = data.secure_url;
 
             // Save URL to Supabase
-            const { success, error: dbError } = await submitImageUrl('task3', imageUrl);
+            const { success, error: dbError } =             await submitImageUrl(taskId, imageUrl);
             if (!success) {
                 throw dbError || new Error('Failed to save submission to database.');
             }
             
             // Update task progress and award 5 points
-            await updateTaskCompletion('task3', 1, 5);
+            await updateTaskCompletion(taskId, 1, showComicInstructions ? 0 : 5);
             setSubmittedImageUrl(imageUrl);
 
         } catch (err: any) {
@@ -160,7 +169,7 @@ const ImageSubmissionTask: React.FC = () => {
                     <h1 className="text-4xl font-bold mb-4">{t('submission_received')}</h1>
                     <div className="bg-white p-8 rounded-2xl shadow-xl">
                         <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                        <p className="text-lg text-black mb-6">{t('thank_you_submission')} {language === 'kn' ? '5 ಅಂಕಗಳನ್ನು' : '5 points'} {language === 'kn' ? 'ಮತ್ತು ಈ ಟಾಸ್ಕ್ ಅನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಮುಗಿಸಿದ್ದೀರಿ.' : 'and successfully completed this task.'}</p>
+                        <p className="text-lg text-black mb-6">{t('thank_you_submission')} {showComicInstructions ? '' : (language === 'kn' ? '5 ಅಂಕಗಳನ್ನು' : '5 points')} {language === 'kn' ? 'ಮತ್ತು ಈ ಟಾಸ್ಕ್ ಅನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಮುಗಿಸಿದ್ದೀರಿ.' : 'and successfully completed this task.'}</p>
                         <div className="w-full flex justify-center">
                             {/* Limit the image max-height so tall images don't overflow mobile viewports */}
                             <img
@@ -187,8 +196,29 @@ const ImageSubmissionTask: React.FC = () => {
             </button>
                       <div className="w-full max-w-2xl">
                           {/* Add small top margin on mobile so title doesn't overlap with absolute Back button */}
-                          <h1 className="text-4xl font-bold mb-4 text-center mt-6 sm:mt-0">{t('Cartoon Submission')}</h1>
-                <div className="bg-white p-8 rounded-2xl shadow-xl text-left">
+                          <h1 className="text-4xl font-bold mb-4 text-center mt-6 sm:mt-0">{title}</h1>
+                {showComicInstructions && (
+                  <div className="bg-white p-8 rounded-2xl shadow-xl text-left mb-8">
+                    <h2 className="text-2xl font-semibold text-black mb-4 text-center">Instructions</h2>
+                    <div className="relative min-h-40 flex items-center justify-center">
+                      {!instructionLoaded && <div className="h-10 w-10 animate-spin rounded-full border-4 border-red-200 border-t-red-600" aria-label="Loading instructions" />}
+                      <img
+                        src="/comicInstruction.jpeg"
+                        alt="Quality comics instructions"
+                        onLoad={() => setInstructionLoaded(true)}
+                        className={`max-h-[50vh] max-w-full object-contain rounded-lg transition-opacity ${instructionLoaded ? 'opacity-100' : 'opacity-0'}`}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowExample(true)}
+                      className="mt-6 w-full rounded-lg bg-blue-600 px-6 py-3 font-bold text-white hover:bg-blue-700"
+                    >
+                      View example comic
+                    </button>
+                  </div>
+                )}
+                {!showComicInstructions && <div className="bg-white p-8 rounded-2xl shadow-xl text-left">
   <h2 className="text-2xl font-semibold text-black mb-4 text-center">
     {t('Instructions') || (language === 'kn' ? 'ಸೂಚನೆಗಳು' : 'Instructions')}
   </h2>
@@ -236,7 +266,18 @@ const ImageSubmissionTask: React.FC = () => {
           : 'This category will have a separate Top-3 special recognition.')}
     </li>
   </ul>
-</div>
+                </div>}
+{showExample && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Example comic">
+    <div className="relative max-h-[90vh] max-w-4xl rounded-2xl bg-white p-4 shadow-2xl">
+      <button type="button" onClick={() => setShowExample(false)} className="absolute right-2 top-2 z-10 h-9 w-9 rounded-full bg-black text-xl text-white" aria-label="Close example comic">X</button>
+      <div className="flex min-h-40 items-center justify-center">
+        {!exampleLoaded && <div className="absolute h-10 w-10 animate-spin rounded-full border-4 border-red-200 border-t-red-600" aria-label="Loading example comic" />}
+        <img src="/comicExample.jpeg" alt="Example comic" onLoad={() => setExampleLoaded(true)} className={`max-h-[82vh] max-w-full object-contain transition-opacity ${exampleLoaded ? 'opacity-100' : 'opacity-0'}`} />
+      </div>
+    </div>
+  </div>
+)}
 
 
                  <div className="mt-8 bg-white p-8 rounded-2xl shadow-xl">

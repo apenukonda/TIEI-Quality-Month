@@ -1453,7 +1453,7 @@ const Admin: React.FC = () => {
             }`}
           >
             <FileText size={20} />
-            <span className="min-w-0 flex-1 text-left font-medium">Cartoon Submission Analytics</span>
+            <span className="min-w-0 flex-1 text-left font-medium">Craft your Vision Analytics</span>
           </button>
 
           <button
@@ -1469,7 +1469,7 @@ const Admin: React.FC = () => {
             }`}
           >
             <FileText size={20} />
-            <span className="min-w-0 flex-1 text-left font-medium">Slogan Competition Analytics</span>
+            <span className="min-w-0 flex-1 text-left font-medium">Quality mantra Analytics</span>
           </button>
 
           <button
@@ -1533,7 +1533,7 @@ const Admin: React.FC = () => {
               <section>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-2xl font-semibold">
-                    Slogan Competition Analytics
+                    Quality mantra Analytics
                   </h3>
                 </div>
 
@@ -1722,7 +1722,7 @@ const Admin: React.FC = () => {
               <section>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-2xl font-semibold">
-                    Cartoon Submission Analytics
+                    Craft your Vision Analytics
                   </h3>
                 </div>
 

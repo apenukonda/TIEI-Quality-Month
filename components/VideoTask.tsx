@@ -441,7 +441,7 @@ const VideoTask: React.FC = () => {
         }`}
       >
         <h1 className="text-4xl font-bold mb-4">
-          {t("Video awareness and evaluation module")}
+          {t("Brain boost")}
         </h1>
         <div className="bg-white p-8 rounded-2xl shadow-xl text-center">
           <h2 className="text-2xl font-semibold text-black mb-4">
@@ -469,7 +469,7 @@ const VideoTask: React.FC = () => {
         }`}
       >
         <h1 className="text-3xl font-bold mb-6">
-          {t("Video awareness and evaluation module")}
+          {t("Brain boost")}
         </h1>
         <div className="space-y-4">
           {ADVANCED_MODULES.map((module, index) => {

@@ -7,13 +7,21 @@ import TopScoresModal from "./TopScoresModal";
 import KnowledgeCentreModal from "./KnowledgeCentreModel";
 
 const Dashboard: React.FC = () => {
-  const { tasks } = useContext(AppContext);
+  const { tasks, currentUser } = useContext(AppContext);
+  const eligibleDesignations = new Set([
+    'ASSISTANT ENGINEER', 'ENGINEER', 'ENGINEER TRAINEE',
+    'GRADUATE ENGINEER TRAINEE', 'OFFICER', 'SENIOR ENGINEER',
+    'SENIOR OFFICER', 'SR ENGINEER', 'TEAM LEADER TRAINEE',
+  ]);
+  const visibleTasks = tasks.filter(task =>
+    task.id !== 'task9' || eligibleDesignations.has((currentUser?.designation || '').trim().toUpperCase())
+  );
   const [showCongrats, setShowCongrats] = useState(false);
   const [showTopScores, setShowTopScores] = useState(false);
   const [showKnowledgeCentre, setShowKnowledgeCentre] = useState(false);
   const { setCurrentPage } = useContext(AppContext);
 
-  const allTasksCompleted = tasks.every(
+  const allTasksCompleted = visibleTasks.every(
     (task) => task.completedSteps === task.totalSteps
   );
 
@@ -56,7 +64,7 @@ const Dashboard: React.FC = () => {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {tasks.map((task, index) => (
+        {visibleTasks.map((task, index) => (
           <div
             key={task.id}
             style={{ animationDelay: `${index * 100}ms` }}
