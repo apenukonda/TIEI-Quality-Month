@@ -115,6 +115,8 @@ const VideoTask: React.FC = () => {
   const [loadError, setLoadError] = useState('');
   const [progressLoadVersion, setProgressLoadVersion] = useState(0);
   const QUESTIONS_PER_VIDEO = 7;
+  const quizSessionKey = `quality-month-video-quiz:${currentUser?.id || 'anonymous'}`;
+  const quizSessionHydrated = useRef(false);
 
   const getRpcModuleName = (moduleId?: string) => {
     if (!moduleId) return '';
@@ -123,6 +125,52 @@ const VideoTask: React.FC = () => {
 
   const playerRef = useRef<any>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      const raw = window.sessionStorage.getItem(quizSessionKey);
+      if (raw) {
+        const saved = JSON.parse(raw) as {
+          view?: View;
+          moduleIndex?: number;
+          videoIndex?: number;
+          questions?: Question[];
+          startedQuiz?: boolean;
+          score?: number;
+        };
+        if (
+          Number.isInteger(saved.moduleIndex) &&
+          Number.isInteger(saved.videoIndex) &&
+          Array.isArray(saved.questions) &&
+          saved.questions.length > 0 &&
+          saved.view === 'quiz'
+        ) {
+          setCurrentModuleIndex(saved.moduleIndex as number);
+          setCurrentVideoIndex(saved.videoIndex as number);
+          setCurrentQuizQuestions(saved.questions);
+          setCurrentQuizScore(saved.score || 0);
+          setStartedQuiz(Boolean(saved.startedQuiz));
+          setView('quiz');
+        }
+      }
+    } catch {
+      window.sessionStorage.removeItem(quizSessionKey);
+    } finally {
+      quizSessionHydrated.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!quizSessionHydrated.current || view !== 'quiz' || currentQuizQuestions.length === 0) return;
+    window.sessionStorage.setItem(quizSessionKey, JSON.stringify({
+      view,
+      moduleIndex: currentModuleIndex,
+      videoIndex: currentVideoIndex,
+      questions: currentQuizQuestions,
+      startedQuiz,
+      score: currentQuizScore,
+    }));
+  }, [view, currentModuleIndex, currentVideoIndex, currentQuizQuestions, startedQuiz, currentQuizScore]);
 
   // (currentModule/currentVideo are declared later in the file; effects reference module by index)
 
@@ -354,6 +402,7 @@ const VideoTask: React.FC = () => {
       const updatedQuizzes = { ...completedQuizzes, [`${getRpcModuleName(module.id)}:${currentVideoIndex + 1}`]: true };
       setCompletedQuizzes(updatedQuizzes);
       setStartedQuiz(false);
+      window.sessionStorage.removeItem(quizSessionKey);
       const allComplete = ADVANCED_MODULES.every(item =>
         item.videos.every((_, index) => updatedQuizzes[`${getRpcModuleName(item.id)}:${index + 1}`]));
       setView(allComplete ? 'completed' : 'videos');
@@ -441,7 +490,7 @@ const VideoTask: React.FC = () => {
         }`}
       >
         <h1 className="text-4xl font-bold mb-4">
-          {t("Video awareness and evaluation module")}
+          {t("Brain boost")}
         </h1>
         <div className="bg-white p-8 rounded-2xl shadow-xl text-center">
           <h2 className="text-2xl font-semibold text-black mb-4">
@@ -469,7 +518,7 @@ const VideoTask: React.FC = () => {
         }`}
       >
         <h1 className="text-3xl font-bold mb-6">
-          {t("Video awareness and evaluation module")}
+          {t("Brain boost")}
         </h1>
         <div className="space-y-4">
           {ADVANCED_MODULES.map((module, index) => {
@@ -620,7 +669,9 @@ const VideoTask: React.FC = () => {
         <Quiz
           questions={currentQuizQuestions}
           onComplete={handleQuizComplete}
-          onScoreUpdate={setCurrentQuizScore}
+          onScoreUpdate={(score) => {
+            setCurrentQuizScore(score);
+          }}
           quizId={`${currentModule?.id || 'M'}-${currentVideoIndex}`}
             onShowResult={(s) => { setResultScore(s); setTimeout(() => setShowResultModal(true), 120); }}
         />

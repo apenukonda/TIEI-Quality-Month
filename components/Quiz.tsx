@@ -13,14 +13,38 @@ interface QuizProps {
 }
 
 const TIMER_DURATION = 20;
+interface SavedQuizState {
+  currentQuestionIndex: number;
+  selectedOption: string | null;
+  score: number;
+  timer: number;
+  showFeedback: boolean;
+}
 
 const Quiz: React.FC<QuizProps> = ({ questions, onComplete, onScoreUpdate, onShowResult = undefined, quizId }) => {
+  const { t, language, currentUser } = useContext(AppContext);
+  const storageKey = quizId
+    ? `quality-month-quiz:${currentUser?.id || 'anonymous'}:${quizId}`
+    : null;
+  const readSavedState = (): SavedQuizState | null => {
+    if (!storageKey || typeof window === 'undefined') return null;
+    try {
+      const raw = window.sessionStorage.getItem(storageKey);
+      if (!raw) return null;
+      const saved = JSON.parse(raw) as SavedQuizState;
+      if (!Number.isInteger(saved.currentQuestionIndex) || saved.currentQuestionIndex < 0) return null;
+      return saved;
+    } catch {
+      return null;
+    }
+  };
+  const savedState = readSavedState();
   // Parent component should persist the quiz score (via updateTaskCompletion or addScore)
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [score, setScore] = useState(0);
-  const [timer, setTimer] = useState(TIMER_DURATION);
-  const [showFeedback, setShowFeedback] = useState(false);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(savedState?.currentQuestionIndex ?? 0);
+  const [selectedOption, setSelectedOption] = useState<string | null>(savedState?.selectedOption ?? null);
+  const [score, setScore] = useState(savedState?.score ?? 0);
+  const [timer, setTimer] = useState(savedState?.timer ?? TIMER_DURATION);
+  const [showFeedback, setShowFeedback] = useState(savedState?.showFeedback ?? false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const answerLocked = useRef(false);
@@ -28,7 +52,17 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete, onScoreUpdate, onSho
   // Modal is shown by parent via onShowResult prop. Quiz no longer manages result modal UI.
 
   const currentQuestion = questions && questions.length > 0 ? questions[currentQuestionIndex] : undefined;
-  const { t, language } = useContext(AppContext);
+  useEffect(() => {
+    if (!storageKey || !currentQuestion) return;
+    const state: SavedQuizState = {
+      currentQuestionIndex,
+      selectedOption,
+      score,
+      timer,
+      showFeedback,
+    };
+    window.sessionStorage.setItem(storageKey, JSON.stringify(state));
+  }, [storageKey, currentQuestion, currentQuestionIndex, selectedOption, score, timer, showFeedback]);
 
   // helper to get localized text. The codebase sometimes uses strings in the
   // format 'English-Kannada' inside constants. When language === 'kn' prefer
@@ -110,6 +144,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete, onScoreUpdate, onSho
       setSaveError('');
       try {
         await onComplete(score);
+        if (storageKey) window.sessionStorage.removeItem(storageKey);
         onShowResult?.(score);
       } catch (error) {
         setSaveError(error instanceof Error ? error.message : 'Your score could not be saved. Please try again.');
@@ -143,11 +178,12 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete, onScoreUpdate, onSho
   // This prevents language-only updates to the questions array from resetting
   // the user's progress during an in-progress quiz.
   useEffect(() => {
-    setCurrentQuestionIndex(0);
-    setSelectedOption(null);
-    setScore(0);
-    setTimer(TIMER_DURATION);
-    setShowFeedback(false);
+    const restored = readSavedState();
+    setCurrentQuestionIndex(restored?.currentQuestionIndex ?? 0);
+    setSelectedOption(restored?.selectedOption ?? null);
+    setScore(restored?.score ?? 0);
+    setTimer(restored?.timer ?? TIMER_DURATION);
+    setShowFeedback(restored?.showFeedback ?? false);
     setIsSaving(false);
     setSaveError('');
     answerLocked.current = false;

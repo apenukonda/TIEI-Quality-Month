@@ -9,7 +9,9 @@ export enum Page {
   VIDEO_TASK,
   IMAGE_SUBMISSION,
   SLOGAN_WRITER,
-  SUGGESTION_BOX,
+  QUALITY_COMICS,
+  BRAIN_BLITZ,
+  BEYOND_THE_BLUEPRINT,
 }
 
 export enum Department {

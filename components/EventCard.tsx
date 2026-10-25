@@ -23,9 +23,22 @@ interface EventCardProps {
 }
 
 const EventCard: React.FC<EventCardProps> = ({ task }) => {
-  const { setCurrentPage, t, language } = useContext(AppContext);
+  const { setCurrentPage, t, language, getTaskScore } = useContext(AppContext);
+  const [score, setScore] = React.useState(0);
   const progress = (task.completedSteps / task.totalSteps) * 100;
   const isCompleted = progress === 100;
+  const iconNumber: Record<string, number> = {
+    task1: 1, task6: 2, task3: 3, task4: 4, task8: 5, task7: 6, task9: 7,
+  };
+  const [iconLoaded, setIconLoaded] = React.useState(false);
+
+  React.useEffect(() => {
+    let active = true;
+    getTaskScore(task.id).then(value => {
+      if (active) setScore(value);
+    });
+    return () => { active = false; };
+  }, [getTaskScore, task.id, task.completedSteps]);
 
   return (
     <div
@@ -37,16 +50,28 @@ const EventCard: React.FC<EventCardProps> = ({ task }) => {
       }
     >
       <div>
+        <div className="relative mb-4 h-28 flex items-center justify-center">
+          {!iconLoaded && <div className="absolute h-10 w-10 animate-spin rounded-full border-4 border-red-200 border-t-red-600" aria-label="Loading competition image" />}
+          <img
+            src={`/${iconNumber[task.id]}.svg`}
+            alt=""
+            onLoad={() => setIconLoaded(true)}
+            className={`${task.id === 'task8' ? 'h-32 w-32 translate-y-2' : 'h-28 w-28'} object-contain transition-opacity ${iconLoaded ? 'opacity-100' : 'opacity-0'}`}
+          />
+        </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <h3 className="text-xl font-bold text-gray-800 pr-2">
             {language === 'kn' ? (task.titleKn || task.title) : task.title}
           </h3>
           <span className="flex-shrink-0 self-start bg-red-100 text-red-800 text-xs font-bold px-2.5 py-1 rounded-full">
-            {`Max Points:${task.maxScore} ${language === 'en' ? '' : t('points_label')}`}
+            {`${language === 'kn' ? 'ಗರಿಷ್ಠ ಸ್ಕೋರ್' : 'Max Score'}: ${task.maxScore}`}
           </span>
         </div>
         <p className="mt-2 text-sm text-gray-600">
           {language === 'kn' ? (task.descriptionKn || task.description) : task.description}
+        </p>
+        <p className="mt-2 text-sm font-semibold text-gray-700">
+          {language === 'kn' ? 'ನಿಮ್ಮ ಸ್ಕೋರ್' : 'Your Score'}: {score}
         </p>
       </div>
 
