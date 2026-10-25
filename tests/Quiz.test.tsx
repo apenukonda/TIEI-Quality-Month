@@ -24,7 +24,7 @@ describe('quiz score submission', () => {
     const update = vi.fn();
     const showResult = vi.fn();
     quiz({ onComplete: save, onScoreUpdate: update, onShowResult: showResult });
-    fireEvent.click(screen.getByRole('button', { name: 'A Correct' }));
+    fireEvent.click(screen.getByRole('button', { name: /Correct/ }));
     expect(update).toHaveBeenCalledTimes(1);
     expect(update).toHaveBeenCalledWith(1);
     fireEvent.click(screen.getByRole('button', { name: 'Finish quiz' }));
@@ -38,7 +38,7 @@ describe('quiz score submission', () => {
     const save = vi.fn(() => new Promise<void>(resolve => { finish = resolve; }));
     const showResult = vi.fn();
     quiz({ onComplete: save, onShowResult: showResult });
-    fireEvent.click(screen.getByRole('button', { name: 'A Correct' }));
+    fireEvent.click(screen.getByRole('button', { name: /Correct/ }));
     const button = screen.getByRole('button', { name: 'Finish quiz' });
     fireEvent.click(button);
     fireEvent.click(button);
@@ -53,7 +53,7 @@ describe('quiz score submission', () => {
     const save = vi.fn().mockRejectedValueOnce(new Error('Connection interrupted')).mockResolvedValueOnce(undefined);
     const showResult = vi.fn();
     quiz({ onComplete: save, onShowResult: showResult });
-    fireEvent.click(screen.getByRole('button', { name: 'A Correct' }));
+    fireEvent.click(screen.getByRole('button', { name: /Correct/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Finish quiz' }));
     await waitFor(() => expect(screen.getByRole('alert').textContent).toBe('Connection interrupted'));
     expect(showResult).not.toHaveBeenCalled();

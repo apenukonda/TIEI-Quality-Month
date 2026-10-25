@@ -5,7 +5,7 @@ import { ChevronLeftIcon } from './icons';
 import { Page, Department } from '../types';
 
 const TopPerformers: React.FC = () => {
-  const { getTopScores, setCurrentPage, t } = useContext(AppContext);
+  const { getTopScores, setCurrentPage, t, language } = useContext(AppContext);
   const [scores, setScores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [departmentFilter, setDepartmentFilter] = useState<string | undefined>(undefined);
@@ -70,7 +70,7 @@ const TopPerformers: React.FC = () => {
                     </div>
                     <div className="mt-1 text-xs sm:text-sm opacity-90 text-center">{s?.name || ''}</div>
                     <div className={`mt-2 ${podiumWidth} ${podiumHeight} bg-white/20 rounded-xl flex items-end justify-center`}> 
-                      <div className="mb-2 text-2xl sm:text-3xl font-extrabold">{s ? s.score : '-'}</div>
+                      <div className="mb-2 text-2xl sm:text-3xl font-extrabold">{s ? s.score.toLocaleString(language === 'kn' ? 'kn-IN' : 'en-IN') : '-'}</div>
                     </div>
                   </div>
                 );
@@ -94,7 +94,7 @@ const TopPerformers: React.FC = () => {
                         <div className="text-[11px] text-gray-500">{user.department}</div>
                       </div>
                     </div>
-                    <div className="text-sm font-extrabold text-gray-900">{user.score}</div>
+                    <div className="text-sm font-extrabold text-gray-900">{user.score.toLocaleString(language === 'kn' ? 'kn-IN' : 'en-IN')}</div>
                   </li>
                 ))}
               </ul>

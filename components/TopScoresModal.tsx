@@ -14,7 +14,7 @@ const Spinner: React.FC = () => (
 );
 
 const TopScoresModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const { getTopScores } = useContext(AppContext);
+  const { getTopScores, language } = useContext(AppContext);
   const [scores, setScores] = useState<ScoreData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -78,7 +78,7 @@ const TopScoresModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   <p className="text-sm text-gray-500">{user.department}</p>
                 </div>
                 <div className="text-2xl font-black text-red-500">
-                  {user.score}
+                  {user.score.toLocaleString(language === "kn" ? "kn-IN" : "en-IN")}
                 </div>
               </li>
             ))}

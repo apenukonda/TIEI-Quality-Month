@@ -45,7 +45,7 @@ export const AppContext = createContext<AppContextType>({} as AppContextType);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<'light' | 'dark'>('dark');
-  const [currentPage, setCurrentPage] = useState<Page>(Page.HOME);
+  const [currentPage, setCurrentPageState] = useState<Page>(Page.HOME);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedModuleIndex, setSelectedModuleIndex] = useState<number | null>(null);
   const [language, setLanguageState] = useState<'en' | 'kn'>('en');
@@ -95,6 +95,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const clearSession = () => {
     localStorage.removeItem(SESSION_KEY);
   };
+
+  const setCurrentPage = (page: Page) => {
+    if (page === currentPage) return;
+
+    setCurrentPageState(page);
+    if (typeof window !== 'undefined') {
+      window.history.pushState(
+        { ...(window.history.state || {}), page },
+        '',
+        `${window.location.pathname}${window.location.search}${window.location.hash}`,
+      );
+    }
+  };
   
   const setTheme = (newTheme: 'light' | 'dark') => {
     setThemeState(newTheme);
@@ -129,6 +142,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   useEffect(() => {
     setTheme('dark');
+
+    const currentHistoryState = window.history.state || {};
+    window.history.replaceState({ ...currentHistoryState, page: currentPage }, '', window.location.href);
+
+    const handlePopState = (event: PopStateEvent) => {
+      const page = event.state?.page;
+      if (typeof page === 'number' && Object.values(Page).includes(page)) {
+        setCurrentPageState(page as Page);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
 
     // Load saved language preference (if any)
     try {
@@ -186,7 +210,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       await fetchUserTasks(user.id);
     };
     restoreSession().catch(error => console.error('Could not restore saved progress:', error));
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      window.removeEventListener('popstate', handlePopState);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -277,6 +304,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   'Quality Comics': 'Quality Comics',
   'Brain blitz': 'Brain Blitz',
   'Brain Blitz': 'Brain Blitz',
+  brain_blitz_message: 'Complete Brain Boost and score higher to increase your chances of participating in this competition.',
   'Beyond the blueprint': 'Beyond the Blueprint',
   'Beyond the Blueprint': 'Beyond the Blueprint',
   // Keys used by MD Message instructions
@@ -317,6 +345,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   'Quality Comics': 'ಗುಣಮಟ್ಟದ ಕಾಮಿಕ್ಸ್',
   'Brain blitz': 'ಬ್ರೈನ್ ಬ್ಲಿಟ್ಜ್',
   'Brain Blitz': 'ಬ್ರೈನ್ ಬ್ಲಿಟ್ಜ್',
+  brain_blitz_message: 'ಈ ಸ್ಪರ್ಧೆಯಲ್ಲಿ ಭಾಗವಹಿಸುವ ಸಾಧ್ಯತೆಯನ್ನು ಹೆಚ್ಚಿಸಲು ಬ್ರೈನ್ ಬೂಸ್ಟ್ ಪೂರ್ಣಗೊಳಿಸಿ ಮತ್ತು ಹೆಚ್ಚಿನ ಅಂಕಗಳನ್ನು ಗಳಿಸಿ.',
   'Beyond the blueprint': 'ಬಿಯಾಂಡ್ ದಿ ಬ್ಲೂಪ್ರಿಂಟ್',
   'Beyond the Blueprint': 'ಬಿಯಾಂಡ್ ದಿ ಬ್ಲೂಪ್ರಿಂಟ್',
   'Instructions Title': 'ಸೂಚನೆಗಳ ಶೀರ್ಷಿಕೆ',

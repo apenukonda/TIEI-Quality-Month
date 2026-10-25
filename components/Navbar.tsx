@@ -288,11 +288,11 @@ const Navbar: React.FC = () => {
           </button> */}
           {/* score display left of avatar for desktop */}
           <div className="hidden sm:flex flex-col items-end mr-2 text-right">
-            <span className="text-sm text-gray-600 dark:text-gray-300">
+            <span key={`score-label-${language}`} className="text-sm text-gray-600 dark:text-gray-300">
               {t("score")}
             </span>
-            <span className="text-lg font-bold text-gray-900 dark:text-white">
-              {currentUser?.score ?? 0}
+            <span key={`score-value-${language}`} className="text-lg font-bold text-gray-900 dark:text-white">
+              {(currentUser?.score ?? 0).toLocaleString(language === "kn" ? "kn-IN" : "en-IN")}
             </span>
           </div>
 
@@ -302,8 +302,8 @@ const Navbar: React.FC = () => {
               <span className="text-[10px] text-gray-600 dark:text-gray-300 leading-none">
                 {t("score")}
               </span>
-              <span className="text-sm font-semibold">
-                {currentUser?.score ?? 0}
+              <span key={`mobile-score-value-${language}`} className="text-sm font-semibold">
+                {(currentUser?.score ?? 0).toLocaleString(language === "kn" ? "kn-IN" : "en-IN")}
               </span>
             </div>
           </div>
