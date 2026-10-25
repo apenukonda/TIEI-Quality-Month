@@ -70,23 +70,29 @@ const EventCard: React.FC<EventCardProps> = ({ task }) => {
         <p className="mt-2 text-sm text-gray-600">
           {language === 'kn' ? (task.descriptionKn || task.description) : task.description}
         </p>
-        <p className="mt-2 text-sm font-semibold text-gray-700">
-          {language === 'kn' ? 'ನಿಮ್ಮ ಸ್ಕೋರ್' : 'Your Score'}: {score}
+        <p key={`task-score-${language}`} className="mt-2 text-sm font-semibold text-gray-700">
+          {language === 'kn' ? 'ನಿಮ್ಮ ಸ್ಕೋರ್' : 'Your Score'}: {score.toLocaleString(language === 'kn' ? 'kn-IN' : 'en-IN')}
         </p>
       </div>
 
       <div className="mt-6">
-        <div className="flex justify-between items-center mb-2 text-sm font-medium text-gray-600">
-          <span>{t('progress_label')}</span>
-          <span>{task.completedSteps} / {task.totalSteps}</span>
-        </div>
-        {isCompleted ? (
-      <div className="flex items-center gap-2 text-green-600">
-        <CheckCircleIcon className="w-6 h-6" />
-        <span className="font-bold">{t('completed')}</span>
-      </div>
+        {task.id === 'task8' ? (
+          <p className="text-sm font-semibold leading-5 text-red-700">
+            {t('brain_blitz_message')}
+          </p>
+        ) : isCompleted ? (
+          <div className="flex items-center gap-2 text-green-600">
+            <CheckCircleIcon className="w-6 h-6" />
+            <span className="font-bold">{t('completed')}</span>
+          </div>
         ) : (
+          <>
+            <div className="flex justify-between items-center mb-2 text-sm font-medium text-gray-600">
+              <span>{t('progress_label')}</span>
+              <span>{task.completedSteps} / {task.totalSteps}</span>
+            </div>
             <ProgressBar progress={progress} />
+          </>
         )}
       </div>
 

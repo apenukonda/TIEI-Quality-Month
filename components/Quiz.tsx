@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import { Question } from '../types';
 import { CheckCircleIcon, XCircleIcon } from './icons';
 import { AppContext } from '../context/AppContext';
@@ -23,6 +23,31 @@ interface SavedQuizState {
 
 const Quiz: React.FC<QuizProps> = ({ questions, onComplete, onScoreUpdate, onShowResult = undefined, quizId }) => {
   const { t, language, currentUser } = useContext(AppContext);
+  const randomizedQuestions = useMemo(() => questions.map(question => {
+    const options = question.options.map((option, index) => ({
+      option,
+      localizedOption: question.optionsKn?.[index],
+    }));
+    const correctIndex = options.findIndex(({ option }) => option === question.correctAnswer);
+
+    if (correctIndex < 0 || options.length < 2) return question;
+
+    const correctOption = options[correctIndex];
+    const incorrectOptions = options
+      .filter((_, index) => index !== correctIndex)
+      .sort(() => Math.random() - 0.5);
+    const correctPosition = 1 + Math.floor(Math.random() * (options.length - 1));
+    const randomizedOptions = [...incorrectOptions];
+    randomizedOptions.splice(correctPosition, 0, correctOption);
+
+    return {
+      ...question,
+      options: randomizedOptions.map(({ option }) => option),
+      ...(question.optionsKn
+        ? { optionsKn: randomizedOptions.map(({ localizedOption }) => localizedOption || '') }
+        : {}),
+    };
+  }), [questions]);
   const storageKey = quizId
     ? `quality-month-quiz:${currentUser?.id || 'anonymous'}:${quizId}`
     : null;
@@ -51,7 +76,9 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete, onScoreUpdate, onSho
   const submissionLocked = useRef(false);
   // Modal is shown by parent via onShowResult prop. Quiz no longer manages result modal UI.
 
-  const currentQuestion = questions && questions.length > 0 ? questions[currentQuestionIndex] : undefined;
+  const currentQuestion = randomizedQuestions && randomizedQuestions.length > 0
+    ? randomizedQuestions[currentQuestionIndex]
+    : undefined;
   useEffect(() => {
     if (!storageKey || !currentQuestion) return;
     const state: SavedQuizState = {

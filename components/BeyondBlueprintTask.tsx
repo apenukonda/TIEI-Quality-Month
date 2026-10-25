@@ -96,7 +96,7 @@ const BeyondBlueprintTask: React.FC<BeyondBlueprintTaskProps> = ({ taskId, title
         'Observe the Poka-Yoke provided at your workplace and identify possible ways it could fail or be bypassed, allowing a defect to escape.',
         'Mention the workplace and process name briefly.',
         'Briefly describe the Poka-Yoke and the potential failure or bypass method.',
-        'Record your observation step-by-step in the provided Blueprint Pocket Form.',
+        'Record your observation step-by-step in the provided Blueprint Pocket Form below.',
       ];
 
   return (
@@ -123,11 +123,11 @@ const BeyondBlueprintTask: React.FC<BeyondBlueprintTaskProps> = ({ taskId, title
           ) : (
             <>
               <label className="mb-2 block font-semibold text-black" htmlFor="problem-identified">
-                {language === 'kn' ? 'ಗುರುತಿಸಲಾದ ಸಮಸ್ಯೆ' : 'Problem Identified'} <span className="text-red-600">*</span>
+                {language === 'kn' ? 'ಗುರುತಿಸಲಾದ ಸಮಸ್ಯೆಯ ವಿವರಗಳು' : 'Identified Problem(Poka-Yoke) Details'} <span className="text-red-600">*</span>
               </label>
               <textarea id="problem-identified" value={problem} onChange={(event) => setProblem(event.target.value)} className="mb-5 min-h-28 w-full rounded-lg border border-gray-300 p-3 text-black" required />
               <label className="mb-2 block font-semibold text-black" htmlFor="way-of-outflow">
-                {language === 'kn' ? 'ದೋಷ ಹೊರಹೋಗುವ ವಿಧಾನ' : 'Way of Outflow'} <span className="text-red-600">*</span>
+                {language === 'kn' ? 'ಪ್ರಸ್ತಾಪಿತ ಪರಿಹಾರದ ವಿವರಗಳು' : 'Possibilities of outflow details'} <span className="text-red-600">*</span>
               </label>
               <textarea id="way-of-outflow" value={wayOfOutflow} onChange={(event) => setWayOfOutflow(event.target.value)} className="min-h-28 w-full rounded-lg border border-gray-300 p-3 text-black" required />
               <button onClick={() => setShowConfirm(true)} disabled={!problem.trim() || !wayOfOutflow.trim() || submitting} className="mt-6 rounded-lg bg-red-600 px-8 py-3 font-bold text-white hover:bg-red-700 disabled:opacity-50">
