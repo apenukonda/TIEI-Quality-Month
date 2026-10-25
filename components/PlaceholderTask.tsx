@@ -71,7 +71,7 @@ const PlaceholderTask: React.FC<PlaceholderTaskProps> = ({ taskId, title, instru
         {instructions.map((inst, index) => <li key={index}>{language === 'kn' ? translateInstruction(inst) : inst}</li>)}
             </ul>
         </div>
-        {title === 'Quality mantra' ? (
+        {title === 'Quality Mantra' ? (
           <div className="bg-white p-8 rounded-2xl shadow-xl">
             <h2 className="text-2xl font-semibold text-black mb-4">{language === 'kn' ? 'ನಿಮ್ಮ ಸ್ಲೋಗನ್ ಅನ್ನು ನಮೂದಿಸಿ' : 'Enter your slogan'}</h2>
             <textarea

@@ -270,10 +270,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   'Craft your Vision': 'Craft your Vision',
   'Vision Hub': 'Vision Hub',
   'Brain boost': 'Brain boost',
-  'Quality mantra': 'Quality mantra',
+  'Brain Boost': 'Brain Boost',
+  'Quality mantra': 'Quality Mantra',
+  'Quality Mantra': 'Quality Mantra',
   'Quality comics': 'Quality comics',
-  'Brain blitz': 'Brain blitz',
-  'Beyond the blueprint': 'Beyond the blueprint',
+  'Quality Comics': 'Quality Comics',
+  'Brain blitz': 'Brain Blitz',
+  'Brain Blitz': 'Brain Blitz',
+  'Beyond the blueprint': 'Beyond the Blueprint',
+  'Beyond the Blueprint': 'Beyond the Blueprint',
   // Keys used by MD Message instructions
   instr_each_point: 'Each correct answer will earn 1 point.',
   instr_read_each: 'Read each question carefully and select the correct answer from the given choices.',
@@ -304,11 +309,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Advanced Quality Principles translations
   'Advanced Quality Principles': 'ಅತ್ಯಾಧುನಿಕ ಗುಣಮಟ್ಟದ ತತ್ವಗಳು',
   'Brain boost': 'ಬ್ರೈನ್ ಬೂಸ್ಟ್',
+  'Brain Boost': 'ಬ್ರೈನ್ ಬೂಸ್ಟ್',
   'Vision Hub': 'ವಿಷನ್ ಹಬ್',
   'Quality mantra': 'ಗುಣಮಟ್ಟದ ಮಂತ್ರ',
+  'Quality Mantra': 'ಗುಣಮಟ್ಟದ ಮಂತ್ರ',
   'Quality comics': 'ಗುಣಮಟ್ಟದ ಕಾಮಿಕ್ಸ್',
+  'Quality Comics': 'ಗುಣಮಟ್ಟದ ಕಾಮಿಕ್ಸ್',
   'Brain blitz': 'ಬ್ರೈನ್ ಬ್ಲಿಟ್ಜ್',
+  'Brain Blitz': 'ಬ್ರೈನ್ ಬ್ಲಿಟ್ಜ್',
   'Beyond the blueprint': 'ಬಿಯಾಂಡ್ ದಿ ಬ್ಲೂಪ್ರಿಂಟ್',
+  'Beyond the Blueprint': 'ಬಿಯಾಂಡ್ ದಿ ಬ್ಲೂಪ್ರಿಂಟ್',
   'Instructions Title': 'ಸೂಚನೆಗಳ ಶೀರ್ಷಿಕೆ',
   advanced_instructions_bullet_1: 'ಈ ಘಟಕದಲ್ಲಿ ವಿವಿಧ ವಿಷಯಗಳು ಒಳಗೊಂಡಿವೆ ಮತ್ತು ಪ್ರತಿಯೊಂದು ವಿಷಯದಲ್ಲೂ ಅನೇಕ ವಿಡಿಯೋಗಳಿವೆ.',
   advanced_instructions_bullet_2: 'ಪ್ರತಿಯೊಂದು ವಿಡಿಯೋ ಪೂರ್ಣಗೊಂಡ ನಂತರ “ಕ್ವಿಜ್ ಪ್ರಾರಂಭಿಸಿ” ಎಂಬ ಬಟನ್ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಕಾಣಿಸುತ್ತದೆ.',
@@ -676,6 +686,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const getTaskScore = async (taskId: string) => {
     if (!currentUser) return 0;
     try {
+      if (taskId === 'task8') {
+        const results = await Promise.all(['m1', 'm2', 'm3'].map(module =>
+          supabaseClient.from(`module_${module}_progress`).select('score').eq('user_id', currentUser.id).maybeSingle()
+        ));
+        if (results.some(result => result.error)) {
+          console.warn('getTaskScore module fetch error:', results.find(result => result.error)?.error?.message);
+          return 0;
+        }
+        return results.reduce((total, result) => total + Number(result.data?.score || 0), 0);
+      }
       const { data, error } = await supabaseClient
         .from('user_tasks')
         .select('score')

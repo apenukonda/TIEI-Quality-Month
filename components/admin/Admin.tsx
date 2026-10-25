@@ -107,13 +107,15 @@ const Admin: React.FC = () => {
       analyticsParam === "mdMessage" ||
       analyticsParam === "slogan" ||
       analyticsParam === "cartoon" ||
-      analyticsParam === "suggestion"
+      analyticsParam === "suggestion" ||
+      analyticsParam === "blueprint"
         ? analyticsParam
         : lsAnalytics === "videoCompletion" ||
           lsAnalytics === "mdMessage" ||
           lsAnalytics === "slogan" ||
           lsAnalytics === "cartoon" ||
-          lsAnalytics === "suggestion"
+          lsAnalytics === "suggestion" ||
+          lsAnalytics === "blueprint"
         ? lsAnalytics
         : "none";
     return {
@@ -124,7 +126,8 @@ const Admin: React.FC = () => {
         | "mdMessage"
         | "slogan"
         | "cartoon"
-        | "suggestion",
+        | "suggestion"
+        | "blueprint",
     };
   };
 
@@ -138,6 +141,7 @@ const Admin: React.FC = () => {
     | "slogan"
     | "cartoon"
     | "suggestion"
+    | "blueprint"
   >(() => readUrlState().analytics);
   const [showBy, setShowBy] = useState<"department" | "designation">(
     "department"
@@ -150,6 +154,7 @@ const Admin: React.FC = () => {
   const closeSidebarOnMobile = () => {
     if (window.innerWidth < 1024) setIsSidebarOpen(false);
   };
+  const [blueprintRows, setBlueprintRows] = useState<Array<any>>([]);
   // console.log("View:", selectedView, "Analytics:", selectedAnalytics);
 
   // Profiles
@@ -365,6 +370,36 @@ const Admin: React.FC = () => {
     useState<string>("All");
 
   // Fetch helpers with fallbacks and robust error handling
+  const fetchBlueprintSubmissions = async () => {
+    const { data, error } = await supabaseClient
+      .from("beyond_blueprint_submissions")
+      .select("id, user_id, problem, way_of_outflow, created_at")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching blueprint submissions:", error.message || error);
+      setBlueprintRows([]);
+      return;
+    }
+
+    const profileMap = new Map<string, any>();
+    profiles.forEach((profile) => {
+      profileMap.set(String(profile.id), profile);
+      profileMap.set(String(profile.user_id), profile);
+    });
+    setBlueprintRows((data || []).map((row: any) => {
+      const profile = profileMap.get(String(row.user_id));
+      return {
+        ...row,
+        employee_id: profile?.user_id || row.user_id,
+        name: profile?.name || row.user_id,
+        department: profile?.department || "Unknown",
+        designation: profile?.designation || "Unknown",
+        manager_name: profile?.manager_name || null,
+      };
+    }));
+  };
+
   const fetchSlogans = async () => {
     try {
       // Try RPC
@@ -954,6 +989,7 @@ const Admin: React.FC = () => {
     fetchVideoCompletions();
     fetchMDCompletions();
     fetchSlogans();
+    fetchBlueprintSubmissions();
     const subscribeSafely = (
       channelName: string,
       tableName: string,
@@ -1000,6 +1036,13 @@ const Admin: React.FC = () => {
         fetchImageSubmissions();
       }
     );
+    const ch4 = subscribeSafely(
+      "public:beyond_blueprint_submissions",
+      "beyond_blueprint_submissions",
+      () => {
+        fetchBlueprintSubmissions();
+      }
+    );
 
     return () => {
       const cleanup = (sub: any) => {
@@ -1024,6 +1067,7 @@ const Admin: React.FC = () => {
       cleanup(ch);
       cleanup(ch2);
       cleanup(ch3);
+      cleanup(ch4);
     };
     // run once on mount
   }, []);
@@ -1487,6 +1531,22 @@ const Admin: React.FC = () => {
             <FileText size={20} />
             <span className="min-w-0 flex-1 text-left font-medium">Suggestion Submission Analytics</span>
           </button>
+
+          <button
+            onClick={async () => {
+              setSelectedAnalytics("blueprint");
+              closeSidebarOnMobile();
+              await fetchBlueprintSubmissions();
+            }}
+            className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg mb-2 transition-colors ${
+              selectedAnalytics === "blueprint"
+                ? "bg-red-500 text-white"
+                : "text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            <FileText size={20} />
+            <span className="min-w-0 flex-1 text-left font-medium">Beyond the Blueprint Review</span>
+          </button>
         </div>
 
         <div className="p-4 border-t border-gray-200">
@@ -1901,6 +1961,49 @@ const Admin: React.FC = () => {
                       </tbody>
                     </table>
                   </div>
+                </div>
+              </section>
+            ) : selectedAnalytics === "blueprint" ? (
+              <section>
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-2xl font-semibold">Beyond the Blueprint Review</h3>
+                  <button
+                    onClick={fetchBlueprintSubmissions}
+                    className="rounded-lg bg-gray-100 px-4 py-2 text-sm hover:bg-gray-200"
+                  >
+                    Refresh
+                  </button>
+                </div>
+                <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr className="text-left text-sm font-medium text-gray-700">
+                        <th className="px-4 py-3">Employee ID</th>
+                        <th className="px-4 py-3">Name</th>
+                        <th className="px-4 py-3">Department</th>
+                        <th className="px-4 py-3">Problem Identified</th>
+                        <th className="px-4 py-3">Way of Outflow</th>
+                        <th className="px-4 py-3">Submitted At</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {blueprintRows.map((row) => (
+                        <tr key={row.id} className="align-top hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm">{row.employee_id}</td>
+                          <td className="px-4 py-3 text-sm">{row.name}</td>
+                          <td className="px-4 py-3 text-sm">{row.department}</td>
+                          <td className="max-w-sm whitespace-pre-wrap px-4 py-3 text-sm">{row.problem}</td>
+                          <td className="max-w-sm whitespace-pre-wrap px-4 py-3 text-sm">{row.way_of_outflow}</td>
+                          <td className="px-4 py-3 text-sm">{row.created_at ? new Date(row.created_at).toLocaleString() : "-"}</td>
+                        </tr>
+                      ))}
+                      {blueprintRows.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="px-4 py-8 text-center text-gray-500">No Beyond the Blueprint submissions found.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </section>
             ) : selectedAnalytics === "suggestion" ? (

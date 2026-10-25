@@ -10,6 +10,7 @@ import PlaceholderTask from './components/PlaceholderTask';
 import VideoTask from './components/VideoTask';
 import ImageSubmissionTask from './components/ImageSubmissionTask';
 import DummyCompetitionTask from './components/DummyCompetitionTask';
+import BeyondBlueprintTask from './components/BeyondBlueprintTask';
 import TopPerformers from './components/TopPerformers';
 import KnowledgeCentrePage from './components/KnowledgeCentrePage';
 import KnFontScaler from './components/KnFontScaler';
@@ -60,7 +61,7 @@ const App: React.FC = () => {
     case Page.SLOGAN_WRITER:
       return <PlaceholderTask
           taskId="task4" 
-          title={t('Quality mantra')}
+          title={t('Quality Mantra')}
           instructions={[
             "The slogan should be related to Quality.",
             "Slogans are accepted in both Kannada and English.",
@@ -71,9 +72,9 @@ const App: React.FC = () => {
           score={3}
          />;
     case Page.BRAIN_BLITZ:
-      return <DummyCompetitionTask taskId="task8" title={t('Brain blitz')} />;
+      return <DummyCompetitionTask taskId="task8" title={t('Brain Blitz')} />;
     case Page.BEYOND_THE_BLUEPRINT:
-      return <DummyCompetitionTask taskId="task9" title={t('Beyond the blueprint')} />;
+      return <BeyondBlueprintTask taskId="task9" title={t('Beyond the Blueprint')} />;
       case Page.HOME:
       default:
         return <HomePage />;

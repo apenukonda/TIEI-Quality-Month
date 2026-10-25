@@ -81,7 +81,8 @@ begin
     raise exception 'Please sign in to save your own score' using errcode = '42501';
   end if;
   max_points := case task_id_in when 'task1' then 7 when 'task3' then 5
-    when 'task4' then 3 when 'task5' then 3 else null end;
+    when 'task4' then 3 when 'task5' then 3 when 'task8' then 0
+    when 'task9' then 0 else null end;
   max_steps := case task_id_in when 'task1' then 7 else 1 end;
   if max_points is null or score_earned_in is null or completed_steps_in is null
      or score_earned_in < 0 or score_earned_in > max_points

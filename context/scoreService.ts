@@ -12,7 +12,7 @@ export function createScoreService(client: any) {
       console.error('Score save failed:', error);
       throw new Error(error.code === 'PGRST202'
         ? 'Score saving needs a backend update. Please contact the event administrator.'
-        : 'Your score could not be saved. Please check your connection and try again.');
+        : `Your score could not be saved: ${error.message || 'Please check your connection and try again.'}`);
     }
 
     // Both score RPCs return the authoritative profile total, including zero.
