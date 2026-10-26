@@ -9,13 +9,19 @@ import { Page } from '../types';
 vi.mock('../context/supabaseClient', () => ({ default: {} }));
 afterEach(cleanup);
 function mount(getDepartments = vi.fn().mockResolvedValue(['INFORMATION SYSTEMS', 'TNGA - HEAD'])) {
-  const signup = vi.fn().mockResolvedValue({ success: false, error: 'Please check your Employee ID and Department or contact admin' });
+  const signup = vi.fn().mockResolvedValue({ success: false, error: 'Please check that your employee ID and department match. If you need further assistance, click the Need help link below.' });
   const value = { currentPage: Page.SIGNUP, currentUser: null, setCurrentPage: vi.fn(), signup, getRegistrationDepartments: getDepartments } as any;
   render(<AppContext.Provider value={value}><AuthPage /></AppContext.Provider>);
   return { signup, getDepartments };
 }
 
 describe('employee signup form', () => {
+  it('shows the point-of-contact phone number in the help link', () => {
+    mount();
+    const helpLink = screen.getByRole('link', { name: 'Need help? Click here to contact us at +91 94494 52519.' });
+    expect(helpLink.getAttribute('href')).toBe('https://wa.me/919449452519');
+  });
+
   it('omits name/designation and submits employee number with a database department', async () => {
     const { signup } = mount();
     await screen.findByRole('option', { name: 'TNGA - HEAD' });
@@ -34,7 +40,7 @@ describe('employee signup form', () => {
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(screen.getByRole('button', { name: 'Create Account' }));
     await waitFor(() => expect(signup).toHaveBeenCalledWith({ userId: '00001', department: 'TNGA - HEAD', passcode: '1234' }));
-    expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Please check your Employee ID and Department or contact admin');
+    expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Please check that your employee ID and department match. If you need further assistance, click the Need help link below.');
   });
   it('disables signup on department load failure and allows retry', async () => {
     const getDepartments = vi.fn().mockRejectedValueOnce(new Error('Departments could not be loaded. Please try again.'))

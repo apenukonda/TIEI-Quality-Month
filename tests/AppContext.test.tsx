@@ -106,7 +106,7 @@ describe('score state and restored progress', () => {
     await mount();
     backend.rpc.mockResolvedValueOnce({ data: false, error: null });
     const result = await context.signup({ userId: '00001', department: 'TNGA - HEAD', passcode: '1234' });
-    expect(result).toEqual({ success: false, error: 'Please check your Employee ID and Department or contact admin' });
+    expect(result).toEqual({ success: false, error: 'Please check that your employee ID and department match. If you need further assistance, click the Need help link below.' });
     expect(backend.signUp).not.toHaveBeenCalled();
   });
 

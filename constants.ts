@@ -310,7 +310,7 @@ export const INITIAL_TASKS: Task[] = [
     id: 'task6',
     title: 'Brain Boost',
     titleKn: 'ಬ್ರೈನ್ ಬೂಸ್ಟ್',
-    description: 'Self learning video training modules related to TIEI Functions with Quiz evaluation.',
+    description: 'Self learning video training modules related to Engine Functions with Quiz evaluation.',
     descriptionKn: 'ಟಿಐಇಐ ಕಾರ್ಯಗಳಿಗೆ ಸಂಬಂಧಿಸಿದ ಸ್ವಯಂ ಅಧ್ಯಯನ ವೀಡಿಯೋ ತರಬೇತಿ ಘಟಕಗಳು ಮತ್ತು ಪ್ರಶ್ನೋತ್ತರ ಮೌಲ್ಯಮಾಪನ.',
     page: Page.VIDEO_TASK,
     totalSteps: 105,

@@ -206,7 +206,7 @@ const AuthPage: React.FC = () => {
   const inputClass =
     "w-full px-4 py-3 bg-gray-200/50 border-2 border-transparent rounded-lg focus:outline-none focus:border-red-500 transition-colors";
   // Support/help WhatsApp number (use international format without +). Change if needed.
-  const supportPhone = "917975398660"; // e.g. 91 for India + phone
+  const supportPhone = "919449452519";
   const supportWhatsAppUrl = `https://wa.me/${supportPhone}`;
 
   return (
@@ -726,7 +726,7 @@ const AuthPage: React.FC = () => {
           rel="noopener noreferrer"
           className="text-sm text-red-600 hover:underline"
         >
-          Need help? Press this link to get in touch with us.
+          Need help? Click here to contact us at +91 94494 52519.
         </a>
       </div>
 

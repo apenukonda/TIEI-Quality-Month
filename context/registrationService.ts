@@ -6,7 +6,7 @@ export interface SignupDetails {
   passcode: string;
 }
 
-export const EMPLOYEE_MISMATCH_MESSAGE = 'Please check your Employee ID and Department or contact admin';
+export const EMPLOYEE_MISMATCH_MESSAGE = 'Please check that your employee ID and department match. If you need further assistance, click the Need help link below.';
 
 export function createRegistrationService(client: any) {
   return {
