@@ -44,12 +44,12 @@ describe('persisted score totals', () => {
   it('adds module quizzes and other activities, counting the module aggregate once', async () => {
     expect(await task('task1', 5)).toBe(5);
     expect(await moduleQuiz('m1', 1, 6)).toBe(11);
-    expect(await task('task3', 5)).toBe(16);
-    expect(await moduleQuiz('m2', 1, 4)).toBe(20);
+    expect(await task('task3', 0)).toBe(11);
+    expect(await moduleQuiz('m2', 1, 4)).toBe(15);
     const rows = await db.query('select score, completed_steps from public.user_tasks where user_id = $1 and task_id = $2', [userId, 'task6']);
     expect(rows.rows).toEqual([{ score: 10, completed_steps: 14 }]);
     const profile = await db.query<{ score: number }>('select score from public.profiles where id = $1', [userId]);
-    expect(profile.rows[0].score).toBe(20);
+    expect(profile.rows[0].score).toBe(15);
   });
 
   it('does not award points twice for retries or replace a result with a stale lower score', async () => {

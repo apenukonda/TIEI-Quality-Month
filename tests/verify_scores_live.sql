@@ -28,7 +28,7 @@ begin
     if public.update_module_task('m2', test_user, 1, true, 4) <> 15 then
       raise exception 'A second module quiz was not added correctly';
     end if;
-    if public.handle_task_completion('task3', test_user, 1, 5) <> 20 then
+    if public.handle_task_completion('task3', test_user, 1, 0) <> 15 then
       raise exception 'Other activity points were omitted';
     end if;
     if public.update_module_task('m3', test_user, 5, true, 0) <> 20 then

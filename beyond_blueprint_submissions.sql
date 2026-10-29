@@ -50,9 +50,10 @@ begin
 
   max_points := case task_id_in
     when 'task1' then 7
-    when 'task3' then 5
-    when 'task4' then 3
+    when 'task3' then 0
+    when 'task4' then 0
     when 'task5' then 3
+    when 'task7' then 0
     when 'task8' then 0
     when 'task9' then 0
     else null

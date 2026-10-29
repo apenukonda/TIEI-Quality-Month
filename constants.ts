@@ -326,7 +326,7 @@ export const INITIAL_TASKS: Task[] = [
     page: Page.IMAGE_SUBMISSION,
     totalSteps: 1,
     completedSteps: 0,
-    maxScore: 5,
+    maxScore: 0,
   },
   {
     id: 'task4',
@@ -337,7 +337,7 @@ export const INITIAL_TASKS: Task[] = [
     page: Page.SLOGAN_WRITER,
     totalSteps: 1,
     completedSteps: 0,
-    maxScore: 3,
+    maxScore: 0,
   },
   {
     id: 'task7',
@@ -359,7 +359,7 @@ export const INITIAL_TASKS: Task[] = [
     page: Page.BRAIN_BLITZ,
     totalSteps: 1,
     completedSteps: 0,
-    maxScore: 0,
+    maxScore: 105,
   },
   {
     id: 'task9',

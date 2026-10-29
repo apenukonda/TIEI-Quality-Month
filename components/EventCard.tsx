@@ -27,6 +27,7 @@ const EventCard: React.FC<EventCardProps> = ({ task }) => {
   const [score, setScore] = React.useState(0);
   const progress = (task.completedSteps / task.totalSteps) * 100;
   const isCompleted = progress === 100;
+  const isScoreDisplayed = task.id !== 'task3' && task.id !== 'task4' && task.id !== 'task7' && task.id !== 'task9';
   const iconNumber: Record<string, number> = {
     task1: 1, task6: 2, task3: 3, task4: 4, task8: 5, task7: 6, task9: 7,
   };
@@ -63,16 +64,20 @@ const EventCard: React.FC<EventCardProps> = ({ task }) => {
           <h3 className="text-xl font-bold text-gray-800 pr-2">
             {language === 'kn' ? (task.titleKn || task.title) : task.title}
           </h3>
-          <span className="flex-shrink-0 self-start bg-red-100 text-red-800 text-xs font-bold px-2.5 py-1 rounded-full">
-            {`${language === 'kn' ? 'ಗರಿಷ್ಠ ಸ್ಕೋರ್' : 'Max Score'}: ${task.maxScore}`}
-          </span>
+          {isScoreDisplayed && (
+            <span className="flex-shrink-0 self-start bg-red-100 text-red-800 text-xs font-bold px-2.5 py-1 rounded-full">
+              {`${language === 'kn' ? 'ಗರಿಷ್ಠ ಸ್ಕೋರ್' : 'Max Score'}: ${task.maxScore}`}
+            </span>
+          )}
         </div>
         <p className="mt-2 text-sm text-gray-600">
           {language === 'kn' ? (task.descriptionKn || task.description) : task.description}
         </p>
-        <p key={`task-score-${language}`} className="mt-2 text-sm font-semibold text-gray-700">
-          {language === 'kn' ? 'ನಿಮ್ಮ ಸ್ಕೋರ್' : 'Your Score'}: {score.toLocaleString(language === 'kn' ? 'kn-IN' : 'en-IN')}
-        </p>
+        {isScoreDisplayed && (
+          <p key={`task-score-${language}`} className="mt-2 text-sm font-semibold text-gray-700">
+            {language === 'kn' ? 'ನಿಮ್ಮ ಸ್ಕೋರ್' : 'Your Score'}: {score.toLocaleString(language === 'kn' ? 'kn-IN' : 'en-IN')}
+          </p>
+        )}
       </div>
 
       <div className="mt-6">

@@ -282,7 +282,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // Image submission / placeholder
       
       submission_received: 'Submission Received',
-      thank_you_submission: 'Thank you for your submission! You have earned',
+      thank_you_submission: 'Thank you for your submission!',
       image_preview: 'Image Preview:',
   upload_cartoon_instruction: 'Upload an image of a cartoon related to quality or teamwork.',
   submit_hardcopy_instruction: 'Submit the hard copy of your drawing at the HR office.',
@@ -292,7 +292,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   unique_idea: 'A unique idea is preferred for prize selection.',
   file_size: 'The uploaded image file must be less than 500 KB.',
   submit_hardcopy: 'After submitting the image on the portal, kindly submit a hard copy to the Quality Engineering team.',
-  points_reward: 'Upon submission, 5 points will be added to your account.',
+  points_reward: 'This submission does not contribute to the overall score.',
   special_recognition: 'This category will have a separate Top-3 special recognition.',
   'Craft your Vision': 'Craft your Vision',
   'Vision Hub': 'Vision Hub',
@@ -394,7 +394,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // Image submission / placeholder
       
       submission_received: 'ಸಲ್ಲಿಕೆ ಸ್ವೀಕರಿಸಲಾಗಿದೆ',
-      thank_you_submission: 'ನಿಮ್ಮ ಸಲ್ಲಿಕೆಗೆ ಧನ್ಯವಾದಗಳು! ನಿಮಗೆ ಸಿಗುತ್ತದೆ',
+      thank_you_submission: 'ನಿಮ್ಮ ಸಲ್ಲಿಕೆಗೆ ಧನ್ಯವಾದಗಳು!',
       image_preview: 'ಚಿತ್ರ ಪೂರ್ವದೃಶ್ಯ:',
     upload_cartoon_instruction: 'ಗುಣಮಟ್ಟ ಅಥವಾ ತಂಡಕಾರ್ಯಕ್ಕೆ ಸಂಬಂಧಿಸಿದ ಕಾರ್ಟೂನ್ ಚಿತ್ರವನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ.',
     submit_hardcopy_instruction: 'ನಿಮ್ಮ ಚಿತ್ರದ ಹಾರ್ಡ್ ಕಾಪಿಯನ್ನು HR ಕಚೇರಿಗೆ ಸಲ್ಲಿಸಿ.',
