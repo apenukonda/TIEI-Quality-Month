@@ -16,9 +16,9 @@ function mount(getDepartments = vi.fn().mockResolvedValue(['INFORMATION SYSTEMS'
 }
 
 describe('employee signup form', () => {
-  it('shows the point-of-contact phone number in the help link', () => {
+  it('shows the contact link without exposing the phone number', () => {
     mount();
-    const helpLink = screen.getByRole('link', { name: 'Need help? Click here to contact us at +91 94494 52519.' });
+    const helpLink = screen.getByRole('link', { name: 'Need help? Click here to contact us' });
     expect(helpLink.getAttribute('href')).toBe('https://wa.me/919449452519');
   });
 

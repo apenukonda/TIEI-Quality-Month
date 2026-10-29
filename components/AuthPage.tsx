@@ -726,7 +726,7 @@ const AuthPage: React.FC = () => {
           rel="noopener noreferrer"
           className="text-sm text-red-600 hover:underline"
         >
-          Need help? Click here to contact us at +91 94494 52519.
+          Need help? Click here to contact us
         </a>
       </div>
 

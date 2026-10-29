@@ -1562,15 +1562,15 @@ const Admin: React.FC = () => {
                 </div>
 
                 <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-4 mb-4">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       <label className="text-sm font-medium text-gray-700">
                         Department:
                       </label>
                       <select
                         value={sloganDeptFilter}
                         onChange={(e) => setSloganDeptFilter(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        className="w-full max-w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       >
                         <option value="All">All</option>
                         {departments.map((d) => (
@@ -1581,14 +1581,14 @@ const Admin: React.FC = () => {
                       </select>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       <label className="text-sm font-medium text-gray-700">
                         Designation:
                       </label>
                       <select
                         value={sloganDesigFilter}
                         onChange={(e) => setSloganDesigFilter(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        className="w-full max-w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       >
                         <option value="All">All</option>
                         {designations.map((d) => (
@@ -1623,7 +1623,7 @@ const Admin: React.FC = () => {
                       </button>
                     </div>
 
-                    <table className="min-w-full divide-y divide-gray-200">
+                    <table className="w-full table-fixed break-words divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr className="text-left text-sm font-medium text-gray-700">
                           <th className="px-4 py-3">Employee ID</th>
@@ -1750,15 +1750,15 @@ const Admin: React.FC = () => {
                 </div>
 
                 <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-4 mb-4">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       <label className="text-sm font-medium text-gray-700">
                         Department:
                       </label>
                       <select
                         value={imageDeptFilter}
                         onChange={(e) => setImageDeptFilter(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        className="w-full max-w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       >
                         <option value="All">All</option>
                         {departments.map((d) => (
@@ -1769,14 +1769,14 @@ const Admin: React.FC = () => {
                       </select>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       <label className="text-sm font-medium text-gray-700">
                         Designation:
                       </label>
                       <select
                         value={imageDesigFilter}
                         onChange={(e) => setImageDesigFilter(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        className="w-full max-w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       >
                         <option value="All">All</option>
                         {designations.map((d) => (
@@ -1809,7 +1809,7 @@ const Admin: React.FC = () => {
                       </button>
                     </div>
 
-                    <table className="min-w-full divide-y divide-gray-200">
+                    <table className="w-full table-fixed break-words divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr className="text-left text-sm font-medium text-gray-700">
                           <th className="px-4 py-3">Employee ID</th>
@@ -1868,7 +1868,7 @@ const Admin: React.FC = () => {
                   </button>
                 </div>
                 <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-                  <table className="min-w-full divide-y divide-gray-200">
+                  <table className="w-full table-fixed break-words divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr className="text-left text-sm font-medium text-gray-700">
                         <th className="px-4 py-3">Employee ID</th>
@@ -1988,15 +1988,15 @@ const Admin: React.FC = () => {
                 </div>
 
                 <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-4 mb-4">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       <label className="text-sm font-medium text-gray-700">
                         Department:
                       </label>
                       <select
                         value={imageDeptFilter}
                         onChange={(e) => setImageDeptFilter(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        className="w-full max-w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       >
                         <option value="All">All</option>
                         {departments.map((d) => (
@@ -2007,14 +2007,14 @@ const Admin: React.FC = () => {
                       </select>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       <label className="text-sm font-medium text-gray-700">
                         Designation:
                       </label>
                       <select
                         value={imageDesigFilter}
                         onChange={(e) => setImageDesigFilter(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        className="w-full max-w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       >
                         <option value="All">All</option>
                         {designations.map((d) => (
@@ -2047,7 +2047,7 @@ const Admin: React.FC = () => {
                       </button>
                     </div>
 
-                    <table className="min-w-full divide-y divide-gray-200">
+                    <table className="w-full table-fixed break-words divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr className="text-left text-sm font-medium text-gray-700">
                           <th className="px-4 py-3">Employee ID</th>
@@ -2098,15 +2098,15 @@ const Admin: React.FC = () => {
             ) : selectedAnalytics === "videoCompletion" ? (
               <section>
                 <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-4 mb-4">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       <label className="text-sm font-medium text-gray-700">
                         Department:
                       </label>
                       <select
                         value={videoDeptFilter}
                         onChange={(e) => setVideoDeptFilter(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        className="w-full max-w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       >
                         <option value="All">All</option>
                         {departments.map((d) => (
@@ -2117,14 +2117,14 @@ const Admin: React.FC = () => {
                       </select>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       <label className="text-sm font-medium text-gray-700">
                         Designation:
                       </label>
                       <select
                         value={videoDesigFilter}
                         onChange={(e) => setVideoDesigFilter(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        className="w-full max-w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       >
                         <option value="All">All</option>
                         {designations.map((d) => (
@@ -2135,7 +2135,7 @@ const Admin: React.FC = () => {
                       </select>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       <label className="text-sm font-medium text-gray-700">
                         Module:
                       </label>
@@ -2144,7 +2144,7 @@ const Admin: React.FC = () => {
                         onChange={(e) =>
                           setVideoModuleFilter(e.target.value as any)
                         }
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        className="w-full max-w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       >
                         <option value="All">All</option>
                         <option value="m1">m1</option>
@@ -2152,7 +2152,7 @@ const Admin: React.FC = () => {
                         <option value="m3">m3</option>
                       </select>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       <label className="text-sm font-medium text-gray-700">
                         Task:
                       </label>
@@ -2161,7 +2161,7 @@ const Admin: React.FC = () => {
                         onChange={(e) =>
                           setVideoTaskFilter(e.target.value as any)
                         }
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        className="w-full max-w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       >
                         <option value="All">All Tasks</option>
                         <option value="task1">task1</option>
@@ -2204,7 +2204,7 @@ const Admin: React.FC = () => {
                       </button>
                     </div>
 
-                    <table className="min-w-full divide-y divide-gray-200">
+                    <table className="w-full table-fixed break-words divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr className="text-left text-sm font-medium text-gray-700">
                           <th className="px-4 py-3">Employee ID</th>
@@ -2333,15 +2333,15 @@ const Admin: React.FC = () => {
                 </div>
 
                 <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-4 mb-4">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       <label className="text-sm font-medium text-gray-700">
                         Department:
                       </label>
                       <select
                         value={mdDeptFilter}
                         onChange={(e) => setMdDeptFilter(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        className="w-full max-w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       >
                         <option value="All">All</option>
                         {departments.map((d) => (
@@ -2352,14 +2352,14 @@ const Admin: React.FC = () => {
                       </select>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       <label className="text-sm font-medium text-gray-700">
                         Designation:
                       </label>
                       <select
                         value={mdDesigFilter}
                         onChange={(e) => setMdDesigFilter(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        className="w-full max-w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       >
                         <option value="All">All</option>
                         {designations.map((d) => (
@@ -2394,7 +2394,7 @@ const Admin: React.FC = () => {
                       </button>
                     </div>
 
-                    <table className="min-w-full divide-y divide-gray-200">
+                    <table className="w-full table-fixed break-words divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr className="text-left text-sm font-medium text-gray-700">
                           <th className="px-4 py-3">Employee ID</th>
@@ -2563,7 +2563,7 @@ const Admin: React.FC = () => {
                       <select
                         value={departmentFilter}
                         onChange={(e) => setDepartmentFilter(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        className="w-full max-w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       >
                         <option value="All">All</option>
                         {departments.map((d) => (
@@ -2580,7 +2580,7 @@ const Admin: React.FC = () => {
                       <select
                         value={designationFilter}
                         onChange={(e) => setDesignationFilter(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        className="w-full max-w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       >
                         <option value="All">All</option>
                         {designations.map((d) => (
@@ -2610,7 +2610,7 @@ const Admin: React.FC = () => {
                     </div>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
+                    <table className="w-full table-fixed break-words divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr className="text-left text-sm font-medium text-gray-700">
                           <th className="px-4 py-3">Name</th>
@@ -2660,7 +2660,7 @@ const Admin: React.FC = () => {
                     Registrations Summary (All)
                   </h3>
                   <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
+                    <table className="w-full table-fixed break-words divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr className="text-left text-sm font-medium text-gray-700">
                           <th className="px-4 py-3">Employee ID</th>
