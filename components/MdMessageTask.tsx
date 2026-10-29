@@ -125,14 +125,20 @@ const MdMessageTask: React.FC = () => {
 
       {view === 'instructions' && (
         <div className="w-full max-w-3xl text-center">
-          <h2 className="text-3xl font-bold mb-4">{language === 'kn' ? 'MD ಸಂದೇಶ ರಸಪ್ರಶ್ನೆ' : 'MD Message Quiz'}</h2>
-          <h2 className="text-3xl font-bold mb-4">{t('Instructions') || 'Instructions:'}</h2>
-          <ul className="text-left mx-auto max-w-xl  list-outside list-disc text-lg space-y-3 mb-6">
-            <li>{t('instr_read_each') || 'Read each question carefully and select the correct answer from the given choices.'}</li>
-            <li>{t('instr_each_point') || 'Each correct answer will earn 1 point.'}</li>
-            <li>{t('instr_top_scorer') || 'The top scorer will be recognized and selected for the next round of evaluation (considering all types of quizzes).'}</li>
-          </ul>
-          <div className="flex justify-center gap-4">
+          <h1 className="mb-4 text-4xl font-bold">
+            {language === 'kn' ? 'MD ಸಂದೇಶ ರಸಪ್ರಶ್ನೆ' : 'MD Message Quiz'}
+          </h1>
+          <div className="rounded-2xl bg-white p-8 text-left shadow-xl">
+            <h2 className="mb-4 text-center text-2xl font-semibold">
+              {t('Instructions') || 'Instructions'}
+            </h2>
+            <ul className="list-disc space-y-2 pl-5 text-black">
+              <li>{t('instr_read_each') || 'Read each question carefully and select the correct answer from the given choices.'}</li>
+              <li>{t('instr_each_point') || 'Each correct answer will earn 1 point.'}</li>
+              <li>{t('instr_top_scorer') || 'The top scorer will be recognized and selected for the next round of evaluation (considering all types of quizzes).'}</li>
+            </ul>
+          </div>
+          <div className="mt-8 flex justify-center gap-4">
             <button onClick={() => setView('message')} className="px-6 py-2 bg-white text-black font-bold rounded-lg border border-gray-200 hover:bg-gray-100">{t('back') || 'Back'}</button>
             <button onClick={() => setView('quiz')} className="px-6 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700">{t('begin_quiz') || 'Begin Quiz'}</button>
           </div>
