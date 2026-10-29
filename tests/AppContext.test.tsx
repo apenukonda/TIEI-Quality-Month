@@ -71,7 +71,7 @@ describe('score state and restored progress', () => {
     let second!: Promise<void>;
     act(() => {
       first = context.updateTaskCompletion('task1', 7, 5);
-      second = context.updateTaskCompletion('task4', 1, 3);
+      second = context.updateTaskCompletion('task5', 1, 3);
     });
     await waitFor(() => expect(backend.rpc).toHaveBeenCalledTimes(1));
     await act(async () => {
@@ -87,7 +87,7 @@ describe('score state and restored progress', () => {
     let finish!: (result: any) => void;
     backend.rpc.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
     let pending!: Promise<void>;
-    act(() => { pending = context.updateTaskCompletion('task4', 1, 3); });
+    act(() => { pending = context.updateTaskCompletion('task5', 1, 3); });
     await waitFor(() => expect(backend.rpc).toHaveBeenCalledTimes(1));
     await act(async () => context.logout());
     await act(async () => { finish({ data: 14, error: null }); await pending; });
@@ -139,4 +139,3 @@ describe('score state and restored progress', () => {
     expect(result.success).toBe(true);
   });
 });
-

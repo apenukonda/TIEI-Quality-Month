@@ -57,7 +57,9 @@ begin
 
   -- Count every activity once, including the task6 module aggregate.
   select coalesce(sum(score), 0) into total_score
-    from public.user_tasks where user_id = user_id_in;
+    from public.user_tasks
+    where user_id = user_id_in
+      and task_id not in ('task3', 'task4', 'task7', 'task9');
   update public.profiles set score = total_score,
     updated_at = case when score is distinct from total_score then now() else updated_at end
     where id = user_id_in;
@@ -80,8 +82,9 @@ begin
   if auth.uid() is null or auth.uid() <> user_id_in then
     raise exception 'Please sign in to save your own score' using errcode = '42501';
   end if;
-  max_points := case task_id_in when 'task1' then 7 when 'task3' then 5
-    when 'task4' then 3 when 'task5' then 3 when 'task8' then 0
+  max_points := case task_id_in when 'task1' then 7 when 'task3' then 0
+    when 'task4' then 0 when 'task5' then 3 when 'task7' then 0
+    when 'task8' then 0
     when 'task9' then 0 else null end;
   max_steps := case task_id_in when 'task1' then 7 else 1 end;
   if max_points is null or score_earned_in is null or completed_steps_in is null

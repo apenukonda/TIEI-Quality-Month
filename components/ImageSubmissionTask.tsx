@@ -129,8 +129,8 @@ const ImageSubmissionTask: React.FC<ImageSubmissionTaskProps> = ({ taskId, title
                 throw dbError || new Error('Failed to save submission to database.');
             }
             
-            // Update task progress and award 5 points
-            await updateTaskCompletion(taskId, 1, showComicInstructions ? 0 : 5);
+            // Update task progress without adding points
+            await updateTaskCompletion(taskId, 1, 0);
             setSubmittedImageUrl(imageUrl);
 
         } catch (err: any) {
@@ -169,7 +169,9 @@ const ImageSubmissionTask: React.FC<ImageSubmissionTaskProps> = ({ taskId, title
                     <h1 className="text-4xl font-bold mb-4">{t('submission_received')}</h1>
                     <div className="bg-white p-8 rounded-2xl shadow-xl">
                         <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                        <p className="text-lg text-black mb-6">{t('thank_you_submission')} {showComicInstructions ? '' : (language === 'kn' ? '5 ಅಂಕಗಳನ್ನು' : '5 points')} {language === 'kn' ? 'ಮತ್ತು ಈ ಟಾಸ್ಕ್ ಅನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಮುಗಿಸಿದ್ದೀರಿ.' : 'and successfully completed this task.'}</p>
+                        <p className="text-lg text-black mb-6">
+                            {t('thank_you_submission')} {language === 'kn' ? 'ಈ ಟಾಸ್ಕ್ ಅನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಮುಗಿಸಿದ್ದೀರಿ.' : 'You have successfully completed this task.'}
+                        </p>
                         <div className="w-full flex justify-center">
                             {/* Limit the image max-height so tall images don't overflow mobile viewports */}
                             <img
@@ -254,10 +256,9 @@ const ImageSubmissionTask: React.FC<ImageSubmissionTaskProps> = ({ taskId, title
           : 'After submitting the image on the portal, kindly submit a hard copy to the Quality Engineering team.')}
     </li>
     <li>
-      {t('points_reward') || 
-        (language === 'kn' 
-          ? 'ಚಿತ್ರವನ್ನು ಸಲ್ಲಿಸಿದ ನಂತರ ನಿಮ್ಮ ಖಾತೆಗೆ 5 ಅಂಕಗಳು ಸೇರಿಸಲಾಗುತ್ತದೆ.' 
-          : 'Upon submission, 5 points will be added to your account.')}
+      {language === 'kn'
+        ? 'ಈ ಸಲ್ಲಿಕೆಯು ಒಟ್ಟು ಅಂಕಗಳಿಗೆ ಕೊಡುಗೆ ನೀಡುವುದಿಲ್ಲ.'
+        : 'This submission does not contribute to the overall score.'}
     </li>
     <li>
       {t('special_recognition') || 

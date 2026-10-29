@@ -66,10 +66,10 @@ const App: React.FC = () => {
             "The slogan should be related to Quality.",
             "Slogans are accepted in both Kannada and English.",
             "A unique slogan is preferred for prize selection.",
-            "Upon submission, 3 points will be added to your account for overall evaluation.",
+            "This entry does not contribute to the overall score.",
             "This category will have a separate Top-3 special recognition."
           ]}
-          score={3}
+          score={0}
          />;
     case Page.BRAIN_BLITZ:
       return <DummyCompetitionTask taskId="task8" title={t('Brain Blitz')} />;
