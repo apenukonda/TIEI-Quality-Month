@@ -176,7 +176,7 @@ const ProfileMenu: React.FC<{ initials: string }> = ({ initials }) => {
             <div className="my-2 border-t border-gray-200"></div>
 
             <a
-              href={`https://wa.me/7975398660`}
+              href="https://wa.me/919449452519"
               target="_blank"
               rel="noopener noreferrer"
               role="menuitem"
