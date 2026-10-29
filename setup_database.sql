@@ -573,7 +573,30 @@ begin
     coalesce(m2.score, 0) as score_m2,
     coalesce(m3.score, 0) as score_m3,
     p.score as total_score,
-    0 as task_score,
+    case
+      when task_index is null then 0
+      when lower(coalesce(module_filter, 'all')) = 'm1' and task_index = 1 then coalesce(m1.task1_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'm1' and task_index = 2 then coalesce(m1.task2_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'm1' and task_index = 3 then coalesce(m1.task3_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'm1' and task_index = 4 then coalesce(m1.task4_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'm1' and task_index = 5 then coalesce(m1.task5_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'm1' and task_index = 6 then coalesce(m1.task6_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'm2' and task_index = 1 then coalesce(m2.task1_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'm2' and task_index = 2 then coalesce(m2.task2_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'm2' and task_index = 3 then coalesce(m2.task3_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'm2' and task_index = 4 then coalesce(m2.task4_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'm3' and task_index = 1 then coalesce(m3.task1_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'm3' and task_index = 2 then coalesce(m3.task2_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'm3' and task_index = 3 then coalesce(m3.task3_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'm3' and task_index = 4 then coalesce(m3.task4_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'all' and task_index = 1 then coalesce(m1.task1_score, 0) + coalesce(m2.task1_score, 0) + coalesce(m3.task1_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'all' and task_index = 2 then coalesce(m1.task2_score, 0) + coalesce(m2.task2_score, 0) + coalesce(m3.task2_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'all' and task_index = 3 then coalesce(m1.task3_score, 0) + coalesce(m2.task3_score, 0) + coalesce(m3.task3_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'all' and task_index = 4 then coalesce(m1.task4_score, 0) + coalesce(m2.task4_score, 0) + coalesce(m3.task4_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'all' and task_index = 5 then coalesce(m1.task5_score, 0)
+      when lower(coalesce(module_filter, 'all')) = 'all' and task_index = 6 then coalesce(m1.task6_score, 0)
+      else 0
+    end as task_score,
     (coalesce(m1.task1_completed, false) and coalesce(m1.task2_completed, false) and coalesce(m1.task3_completed, false) and coalesce(m1.task4_completed, false) and coalesce(m1.task5_completed, false) and coalesce(m1.task6_completed, false)) as m1,
     (coalesce(m2.task1_completed, false) and coalesce(m2.task2_completed, false) and coalesce(m2.task3_completed, false) and coalesce(m2.task4_completed, false)) as m2,
     (coalesce(m3.task1_completed, false) and coalesce(m3.task2_completed, false) and coalesce(m3.task3_completed, false) and coalesce(m3.task4_completed, false) and coalesce(m3.task5_completed, false)) as m3,

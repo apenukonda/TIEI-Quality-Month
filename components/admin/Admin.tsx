@@ -107,14 +107,14 @@ const Admin: React.FC = () => {
       analyticsParam === "mdMessage" ||
       analyticsParam === "slogan" ||
       analyticsParam === "cartoon" ||
-      analyticsParam === "suggestion" ||
+      analyticsParam === "comics" ||
       analyticsParam === "blueprint"
         ? analyticsParam
         : lsAnalytics === "videoCompletion" ||
           lsAnalytics === "mdMessage" ||
           lsAnalytics === "slogan" ||
           lsAnalytics === "cartoon" ||
-          lsAnalytics === "suggestion" ||
+          lsAnalytics === "comics" ||
           lsAnalytics === "blueprint"
         ? lsAnalytics
         : "none";
@@ -126,7 +126,7 @@ const Admin: React.FC = () => {
         | "mdMessage"
         | "slogan"
         | "cartoon"
-        | "suggestion"
+        | "comics"
         | "blueprint",
     };
   };
@@ -140,7 +140,7 @@ const Admin: React.FC = () => {
     | "mdMessage"
     | "slogan"
     | "cartoon"
-    | "suggestion"
+    | "comics"
     | "blueprint"
   >(() => readUrlState().analytics);
   const [showBy, setShowBy] = useState<"department" | "designation">(
@@ -340,7 +340,7 @@ const Admin: React.FC = () => {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-  // video, md, slogans, images, suggestions
+  // video, md, slogans, images, comics
   const [videoRows, setVideoRows] = useState<Array<any>>([]);
   const [videoDeptFilter, setVideoDeptFilter] = useState<string>("All");
   const [videoDesigFilter, setVideoDesigFilter] = useState<string>("All");
@@ -363,11 +363,6 @@ const Admin: React.FC = () => {
   const [imageDeptFilter, setImageDeptFilter] = useState<string>("All");
   const [imageDesigFilter, setImageDesigFilter] = useState<string>("All");
 
-  const [suggestionRows, setSuggestionRows] = useState<Array<any>>([]);
-  const [suggestionDeptFilter, setSuggestionDeptFilter] =
-    useState<string>("All");
-  const [suggestionDesigFilter, setSuggestionDesigFilter] =
-    useState<string>("All");
 
   // Fetch helpers with fallbacks and robust error handling
   const fetchBlueprintSubmissions = async () => {
@@ -407,12 +402,18 @@ const Admin: React.FC = () => {
         const { data: rpcData, error: rpcErr } = (await (
           supabaseClient as any
         ).rpc?.("get_slogan_submissions")) ?? { data: null, error: null };
-        if (!rpcErr && Array.isArray(rpcData)) {
+        if (
+          !rpcErr &&
+          Array.isArray(rpcData) &&
+          rpcData.every((row: any) => row.task_id && row.image_url)
+        ) {
           const joined = (rpcData as any[]).map((r, idx) => ({
             id: r.id
               ? String(r.id)
               : `${String(r.user_id)}_${String(r.created_at || idx)}`,
             user_id: r.user_id,
+            task_id: r.task_id,
+            image_url: r.image_url,
             employee_id: r.employee_id || r.user_id,
             name: r.name || r.user_id,
             department: r.department || "Unknown",
@@ -591,7 +592,7 @@ const Admin: React.FC = () => {
 
       const { data, error } = await supabaseClient
         .from("image_submissions")
-        .select("user_id, created_at");
+        .select("id, user_id, task_id, image_url, created_at")
       if (error) {
         console.error(
           "Error fetching image_submissions:",
@@ -677,6 +678,8 @@ const Admin: React.FC = () => {
           return {
             id: compositeId,
             user_id: r.user_id,
+            task_id: r.task_id,
+            image_url: r.image_url,
             employee_id: profile?.user_id || r.user_id,
             name: profile?.name || r.user_id,
             department: profile?.department || "Unknown",
@@ -699,153 +702,6 @@ const Admin: React.FC = () => {
     }
   };
 
-  const fetchSuggestionSubmissions = async () => {
-    try {
-      try {
-        const { data: rpcData, error: rpcErr } = (await (
-          supabaseClient as any
-        ).rpc?.("get_suggestion_submissions")) ?? { data: null, error: null };
-        if (!rpcErr && Array.isArray(rpcData)) {
-          const joined = (rpcData as any[]).map((r, idx) => ({
-            id: r.id
-              ? String(r.id)
-              : `${String(r.user_id)}_${String(r.created_at || idx)}`,
-            user_id: r.user_id,
-            employee_id: r.employee_id || r.user_id,
-            name: r.name || r.user_id,
-            department: r.department || "Unknown",
-            designation: r.designation || "Unknown",
-            manager_name: r.manager_name || null,
-            created_at: r.created_at || null,
-          }));
-          // Filter RPC results to only include users that exist in profiles with role='user'
-          const filtered = joined.filter((jr) => hasUserProfile(jr.user_id));
-          console.debug(
-            "fetchSuggestionSubmissions: loaded via RPC count=",
-            filtered.length,
-            "sample=",
-            filtered.slice(0, 3)
-          );
-          setSuggestionRows(filtered);
-          return;
-        } else if (rpcErr) {
-          console.debug(
-            "fetchSuggestionSubmissions: get_suggestion_submissions RPC returned error",
-            rpcErr
-          );
-        }
-      } catch (e) {
-        console.debug("fetchSuggestionSubmissions: rpc attempt failed", e);
-      }
-
-      const { data, error } = await supabaseClient
-        .from("user_tasks")
-        .select("user_id, completed_steps, updated_at")
-        .eq("task_id", "task5")
-        .gte("completed_steps", 1);
-      if (error) {
-        console.error(
-          "Error fetching suggestion submissions (user_tasks):",
-          error.message || error
-        );
-        setSuggestionRows([]);
-        return;
-      }
-
-      const rows = data || [];
-      console.debug(
-        "fetchSuggestionSubmissions: raw user_tasks rows count=",
-        rows.length,
-        "sample=",
-        rows.slice(0, 3)
-      );
-      if (rows.length === 0) {
-        setSuggestionRows([]);
-        return;
-      }
-
-      const userIds = Array.from(
-        new Set(rows.map((r: any) => String(r.user_id)))
-      );
-      let profileMap = new Map<string, any>();
-      try {
-        const { data: profilesDataById, error: profilesErrorById } =
-          await supabaseClient
-            .from("profiles")
-            .select("id, user_id, name, department, designation, role")
-            .in("id", userIds as string[])
-            .eq("role", "user");
-
-        let profilesData = profilesDataById || [];
-        let usedJoin = "id";
-        if (
-          (!profilesData || profilesData.length === 0) &&
-          userIds.length > 0
-        ) {
-          const { data: profilesDataByUserId, error: profilesErrorByUserId } =
-            await supabaseClient
-              .from("profiles")
-              .select("id, user_id, name, department, designation, role")
-              .in("user_id", userIds as string[])
-              .eq("role", "user");
-          if (profilesErrorByUserId) {
-            console.error(
-              "Error fetching profiles for suggestions by user_id:",
-              profilesErrorByUserId.message || profilesErrorByUserId
-            );
-          }
-          if (profilesDataByUserId && profilesDataByUserId.length > 0) {
-            profilesData = profilesDataByUserId;
-            usedJoin = "user_id";
-          }
-        }
-        console.debug(
-          "fetchSuggestionSubmissions: profiles fetched count=",
-          (profilesData || []).length,
-          "usedJoin=",
-          usedJoin,
-          "sample=",
-          (profilesData || []).slice(0, 3)
-        );
-        (profilesData || []).forEach((p: any) => {
-          if (p?.id) profileMap.set(String(p.id), p);
-          if (p?.user_id) profileMap.set(String(p.user_id), p);
-        });
-      } catch (e) {
-        console.error("Unexpected error fetching profiles for suggestions", e);
-      }
-
-      const joined = rows
-        .map((r: any, idx: number) => {
-          const profile = profileMap.get(String(r.user_id)) || null;
-          if (!profile) return null;
-          const compositeId = `${String(r.user_id)}_${String(
-            r.updated_at || r.completed_steps || idx
-          )}`;
-          return {
-            id: compositeId,
-            user_id: r.user_id,
-            employee_id: profile?.user_id || r.user_id,
-            name: profile?.name || r.user_id,
-            department: profile?.department || "Unknown",
-            designation: profile?.designation || "Unknown",
-            manager_name: profile?.manager_name || null,
-            created_at: r.updated_at || null,
-          };
-        })
-        .filter(Boolean) as any[];
-      console.debug(
-        "fetchSuggestionSubmissions: joined rows count=",
-        joined.length,
-        "sample=",
-        joined.slice(0, 3)
-      );
-      setSuggestionRows(joined);
-    } catch (e) {
-      console.error("fetchSuggestionSubmissions overall error", e);
-      setSuggestionRows([]);
-    }
-  };
   const fetchVideoCompletions = async () => {
     // Prefer RPC: admin_video_completion which returns profiles joined with module progress and score.
     try {
@@ -867,7 +723,27 @@ const Admin: React.FC = () => {
           "admin_video_completion RPC error:",
           error.message || error
         );
-        setVideoRows([]);
+        if (videoModuleFilter !== "All" || videoTaskFilter !== "All") {
+          const fallback = await supabaseClient.rpc("admin_video_completion");
+          if (!fallback.error && Array.isArray(fallback.data)) {
+            setVideoRows(
+              (fallback.data as any[]).map((r) => ({
+                ...r,
+                department: r.department || "Unknown",
+                designation: r.designation || "Unknown",
+                score_m1: Number(r.score_m1 || 0),
+                score_m2: Number(r.score_m2 || 0),
+                score_m3: Number(r.score_m3 || 0),
+                total_score: Number(r.total_score || 0),
+                task_score: Number(r.task_score || 0),
+                m1Finished: !!r.m1,
+                m2Finished: !!r.m2,
+                m3Finished: !!r.m3,
+              }))
+            );
+            return;
+          }
+        }
         return;
       }
       const rows = (data || []) as any[];
@@ -1024,7 +900,6 @@ const Admin: React.FC = () => {
     const ch = subscribeSafely("public:user_tasks", "user_tasks", () => {
       fetchVideoCompletions();
       fetchMDCompletions();
-      fetchSuggestionSubmissions();
     });
     const ch2 = subscribeSafely("public:user_slogans", "user_slogans", () => {
       fetchSlogans();
@@ -1305,13 +1180,22 @@ const Admin: React.FC = () => {
       )
       .filter((r) => {
         if (videoTaskFilter !== "All") {
-          return r.task_score != null;
+          return (
+            r.task_score != null &&
+            (Number(r.task_score) > 0 ||
+              (videoModuleFilter === "m1" && r.m1Finished) ||
+              (videoModuleFilter === "m2" && r.m2Finished) ||
+              (videoModuleFilter === "m3" && r.m3Finished))
+          );
         }
         if (videoModuleFilter === "All")
           return r.m1Finished && r.m2Finished && r.m3Finished;
-        if (videoModuleFilter === "m1") return r.m1Finished;
-        if (videoModuleFilter === "m2") return r.m2Finished;
-        if (videoModuleFilter === "m3") return r.m3Finished;
+        if (videoModuleFilter === "m1")
+          return r.m1Finished || Number(r.score_m1) > 0;
+        if (videoModuleFilter === "m2")
+          return r.m2Finished || Number(r.score_m2) > 0;
+        if (videoModuleFilter === "m3")
+          return r.m3Finished || Number(r.score_m3) > 0;
         return true;
       });
 
@@ -1365,20 +1249,20 @@ const Admin: React.FC = () => {
   const displayedImageRows = useMemo(() => {
     return imageRows.filter(
       (r) =>
+        r.task_id === "task3" &&
         (imageDeptFilter === "All" || r.department === imageDeptFilter) &&
         (imageDesigFilter === "All" || r.designation === imageDesigFilter)
     );
   }, [imageRows, imageDeptFilter, imageDesigFilter]);
 
-  const displayedSuggestionRows = useMemo(() => {
-    return suggestionRows.filter(
+  const displayedComicRows = useMemo(() => {
+    return imageRows.filter(
       (r) =>
-        (suggestionDeptFilter === "All" ||
-          r.department === suggestionDeptFilter) &&
-        (suggestionDesigFilter === "All" ||
-          r.designation === suggestionDesigFilter)
+        r.task_id === "task7" &&
+        (imageDeptFilter === "All" || r.department === imageDeptFilter) &&
+        (imageDesigFilter === "All" || r.designation === imageDesigFilter)
     );
-  }, [suggestionRows, suggestionDeptFilter, suggestionDesigFilter]);
+  }, [imageRows, imageDeptFilter, imageDesigFilter]);
 
   return (
     <div className="flex h-screen min-w-0 bg-gray-50">
@@ -1518,18 +1402,18 @@ const Admin: React.FC = () => {
 
           <button
             onClick={async () => {
-              setSelectedAnalytics("suggestion");
+              setSelectedAnalytics("comics");
               closeSidebarOnMobile();
-              await fetchSuggestionSubmissions();
+              await fetchImageSubmissions();
             }}
             className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg mb-2 transition-colors ${
-              selectedAnalytics === "suggestion"
+              selectedAnalytics === "comics"
                 ? "bg-red-500 text-white"
                 : "text-gray-700 hover:bg-gray-100"
             }`}
           >
             <FileText size={20} />
-            <span className="min-w-0 flex-1 text-left font-medium">Suggestion Submission Analytics</span>
+            <span className="min-w-0 flex-1 text-left font-medium">Quality Comics Analytics</span>
           </button>
 
           <button
@@ -1797,7 +1681,7 @@ const Admin: React.FC = () => {
                         data={(departments as string[]).map((d) => ({
                           category: d,
                           plan: PLAN_BY_DEPARTMENT[d] ?? 0,
-                          submitted: imageRows.filter((s) => s.department === d)
+                          submitted: imageRows.filter((s) => s.task_id === "task3" && s.department === d)
                             .length,
                         }))}
                         margin={{ top: 24, right: 30, left: 0, bottom: 60 }}
@@ -1837,7 +1721,7 @@ const Admin: React.FC = () => {
                           category: d,
                           plan: PLAN_BY_DESIGNATION[d] ?? 0,
                           submitted: imageRows.filter(
-                            (s) => s.designation === d
+                            (s) => s.task_id === "task3" && s.designation === d
                           ).length,
                         }))}
                         margin={{ top: 24, right: 30, left: 0, bottom: 60 }}
@@ -1909,13 +1793,12 @@ const Admin: React.FC = () => {
                       <button
                         onClick={() => {
                           const rows = displayedImageRows.map((r) => {
-                            const mgr = resolveManager(r);
                             return {
                               employee_id: r.employee_id,
                               name: r.name,
                               department: r.department || "Unknown",
                               designation: r.designation || "Unknown",
-                              manager: mgr !== "-" ? mgr : "N/A",
+                              image_url: r.image_url || "",
                             };
                           });
                           exportToCSV(rows, "cartoon_submissions.csv");
@@ -1933,7 +1816,7 @@ const Admin: React.FC = () => {
                           <th className="px-4 py-3">Name</th>
                           <th className="px-4 py-3">Department</th>
                           <th className="px-4 py-3">Designation</th>
-                          <th className="px-4 py-3">Manager</th>
+                          <th className="px-4 py-3">Image URL</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 bg-white">
@@ -1945,7 +1828,17 @@ const Admin: React.FC = () => {
                             <td className="px-4 py-3 text-sm">{r.name}</td>
                             <td className="px-4 py-3 text-sm">{r.department}</td>
                             <td className="px-4 py-3 text-sm">{r.designation}</td>
-                            <td className="px-4 py-3 text-sm">{resolveManager(r)}</td>
+                            <td className="max-w-xs px-4 py-3 text-sm">
+                              <a
+                                href={r.image_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={r.image_url}
+                                className="block truncate text-blue-600 hover:underline"
+                              >
+                                {r.image_url}
+                              </a>
+                            </td>
                           </tr>
                         ))}
                         {displayedImageRows.length === 0 && (
@@ -2006,11 +1899,11 @@ const Admin: React.FC = () => {
                   </table>
                 </div>
               </section>
-            ) : selectedAnalytics === "suggestion" ? (
+            ) : selectedAnalytics === "comics" ? (
               <section>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-2xl font-semibold">
-                    Suggestion Submission Analytics
+                    Quality Comics Analytics
                   </h3>
                 </div>
 
@@ -2025,8 +1918,8 @@ const Admin: React.FC = () => {
                         data={(departments as string[]).map((d) => ({
                           category: d,
                           plan: PLAN_BY_DEPARTMENT[d] ?? 0,
-                          submitted: suggestionRows.filter(
-                            (s) => s.department === d
+                          submitted: imageRows.filter(
+                            (s) => s.task_id === "task7" && s.department === d
                           ).length,
                         }))}
                         margin={{ top: 24, right: 30, left: 0, bottom: 60 }}
@@ -2065,8 +1958,8 @@ const Admin: React.FC = () => {
                         data={(designations as string[]).map((d) => ({
                           category: d,
                           plan: PLAN_BY_DESIGNATION[d] ?? 0,
-                          submitted: suggestionRows.filter(
-                            (s) => s.designation === d
+                          submitted: imageRows.filter(
+                            (s) => s.task_id === "task7" && s.designation === d
                           ).length,
                         }))}
                         margin={{ top: 24, right: 30, left: 0, bottom: 60 }}
@@ -2101,10 +1994,8 @@ const Admin: React.FC = () => {
                         Department:
                       </label>
                       <select
-                        value={suggestionDeptFilter}
-                        onChange={(e) =>
-                          setSuggestionDeptFilter(e.target.value)
-                        }
+                        value={imageDeptFilter}
+                        onChange={(e) => setImageDeptFilter(e.target.value)}
                         className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       >
                         <option value="All">All</option>
@@ -2121,10 +2012,8 @@ const Admin: React.FC = () => {
                         Designation:
                       </label>
                       <select
-                        value={suggestionDesigFilter}
-                        onChange={(e) =>
-                          setSuggestionDesigFilter(e.target.value)
-                        }
+                        value={imageDesigFilter}
+                        onChange={(e) => setImageDesigFilter(e.target.value)}
                         className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       >
                         <option value="All">All</option>
@@ -2141,15 +2030,16 @@ const Admin: React.FC = () => {
                     <div className="flex items-center justify-end mb-2">
                       <button
                         onClick={() => {
-                          const rows = displayedSuggestionRows.map((r) => {
-                            const mgr = resolveManager(r);
+                          const rows = displayedComicRows.map((r) => {
                             return {
                               employee_id: r.employee_id,
                               name: r.name,
-                              manager: mgr !== "-" ? mgr : "N/A",
+                              department: r.department || "Unknown",
+                              designation: r.designation || "Unknown",
+                              image_url: r.image_url || "",
                             };
                           });
-                          exportToCSV(rows, "suggestion_submissions.csv");
+                          exportToCSV(rows, "quality_comics_submissions.csv");
                         }}
                         className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
                       >
@@ -2162,26 +2052,40 @@ const Admin: React.FC = () => {
                         <tr className="text-left text-sm font-medium text-gray-700">
                           <th className="px-4 py-3">Employee ID</th>
                           <th className="px-4 py-3">Name</th>
-                          <th className="px-4 py-3">Manager</th>
+                          <th className="px-4 py-3">Department</th>
+                          <th className="px-4 py-3">Designation</th>
+                          <th className="px-4 py-3">Image URL</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 bg-white">
-                        {displayedSuggestionRows.map((r) => (
+                        {displayedComicRows.map((r) => (
                           <tr key={r.id} className="hover:bg-gray-50">
                             <td className="px-4 py-3 text-sm">
                               {r.employee_id}
                             </td>
                             <td className="px-4 py-3 text-sm">{r.name}</td>
-                            <td className="px-4 py-3 text-sm">{resolveManager(r)}</td>
+                            <td className="px-4 py-3 text-sm">{r.department}</td>
+                            <td className="px-4 py-3 text-sm">{r.designation}</td>
+                            <td className="max-w-xs px-4 py-3 text-sm">
+                              <a
+                                href={r.image_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={r.image_url}
+                                className="block truncate text-blue-600 hover:underline"
+                              >
+                                {r.image_url}
+                              </a>
+                            </td>
                           </tr>
                         ))}
-                        {displayedSuggestionRows.length === 0 && (
+                        {displayedComicRows.length === 0 && (
                           <tr>
                             <td
-                              colSpan={3}
+                              colSpan={5}
                               className="px-4 py-8 text-center text-gray-500"
                             >
-                              No suggestion submissions found for selected
+                              No quality comics submissions found for selected
                               filters.
                             </td>
                           </tr>
